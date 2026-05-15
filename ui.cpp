@@ -210,6 +210,57 @@ void drawJumpscare(int w, int h)
         glDisable(GL_TEXTURE_2D);
 }
 
+void drawHeavyJumpscare(int w, int h, float t)
+{
+    if (heavyJumpscareTimer <= 0)
+        return;
+
+    if (jumpscareTexture && heavyJumpscareTimer % 3 != 0)
+        drawJumpscare(w, h);
+
+    float pulse = 0.55f + 0.45f * fabsf(sinf(t * 38.0f));
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.75f, 0.0f, 0.0f, 0.30f + 0.35f * pulse);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(w, 0);
+    glVertex2f(w, h);
+    glVertex2f(0, h);
+    glEnd();
+
+    glColor4f(0.0f, 0.0f, 0.0f, 0.42f);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(w, 0);
+    glVertex2f(w, h * 0.18f);
+    glVertex2f(0, h * 0.18f);
+    glVertex2f(0, h * 0.82f);
+    glVertex2f(w, h * 0.82f);
+    glVertex2f(w, h);
+    glVertex2f(0, h);
+    glEnd();
+
+    glColor4f(1.0f, 0.02f, 0.0f, 0.75f + 0.20f * pulse);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(w * 0.39f, h * 0.43f);
+    for (int a = 0; a <= 24; a++)
+    {
+        float ang = a * (2 * PI / 24);
+        glVertex2f(w * 0.39f + cosf(ang) * 34.0f, h * 0.43f + sinf(ang) * 18.0f);
+    }
+    glEnd();
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(w * 0.61f, h * 0.43f);
+    for (int a = 0; a <= 24; a++)
+    {
+        float ang = a * (2 * PI / 24);
+        glVertex2f(w * 0.61f + cosf(ang) * 34.0f, h * 0.43f + sinf(ang) * 18.0f);
+    }
+    glEnd();
+    glDisable(GL_BLEND);
+}
+
 void drawUI(int w, int h)
 {
     if (showJumpscare)
@@ -239,11 +290,12 @@ void drawUI(int w, int h)
         glColor3f(0.75f, 0.75f, 0.75f);
         renderStr(w / 2 - 160, h / 2 + 10, GLUT_BITMAP_HELVETICA_12, "W/S = Maju/Mundur   A/D = Putar kiri/kanan");
         renderStr(w / 2 - 160, h / 2 + 30, GLUT_BITMAP_HELVETICA_12, "Mouse = Lihat kiri/kanan");
-        renderStr(w / 2 - 160, h / 2 + 60, GLUT_BITMAP_HELVETICA_12, "Kumpulkan semua koin. Jangan ditangkap hantu!");
+        renderStr(w / 2 - 160, h / 2 + 50, GLUT_BITMAP_HELVETICA_12, "C = Ganti kamera First Person / Third Person");
+        renderStr(w / 2 - 160, h / 2 + 75, GLUT_BITMAP_HELVETICA_12, "Kumpulkan semua koin. Jangan ditangkap hantu!");
         glColor3f(0.8f, 0.2f, 0.9f);
-        renderStr(w / 2 - 160, h / 2 + 90, GLUT_BITMAP_HELVETICA_12, "Koin UNGU = Power Pellet! Hantu jadi takut!");
+        renderStr(w / 2 - 160, h / 2 + 105, GLUT_BITMAP_HELVETICA_12, "Koin UNGU = Power Pellet! Hantu jadi takut!");
         glColor3f(0.8f, 0.6f, 0.1f);
-        renderStr(w / 2 - 160, h / 2 + 115, GLUT_BITMAP_HELVETICA_12, "Tangkap hantu saat power untuk SKOR COMBO!");
+        renderStr(w / 2 - 160, h / 2 + 130, GLUT_BITMAP_HELVETICA_12, "Tangkap hantu saat power untuk SKOR COMBO!");
         if (highScore > 0)
         {
             glColor3f(1, 0.9f, 0);
@@ -267,6 +319,8 @@ void drawUI(int w, int h)
         glColor3f(1.f, 0.85f, 0.f);
         sprintf(buf, "Skor: %d", score);
         renderStr(w - 150, 175, GLUT_BITMAP_HELVETICA_18, buf);
+        glColor3f(0.7f, 0.85f, 1.0f);
+        renderStr(w - 150, 195, GLUT_BITMAP_HELVETICA_12, firstPersonMode ? "Kamera: First Person" : "Kamera: Third Person");
         if (scoreMultiplier > 1)
         {
             float pulse = 0.7f + 0.3f * sinf(t * 8);
@@ -274,8 +328,16 @@ void drawUI(int w, int h)
             sprintf(buf, "x%d COMBO!", scoreMultiplier);
             renderStr(w / 2 - 40, h - 50, GLUT_BITMAP_TIMES_ROMAN_24, buf);
         }
+        glColor3f(nightmareActive ? 1.0f : 0.7f, nightmareActive ? 0.1f : 0.85f, nightmareActive ? 0.05f : 1.0f);
+        renderStr(w - 150, 215, GLUT_BITMAP_HELVETICA_12, nightmareActive ? "NIGHTMARE CHASE" : (dashCooldown <= 0 ? "Dash: READY" : "Dash: Cooldown"));
         drawPowerBar(w, h);
-        drawMinimap(w, h);
+        if (!firstPersonMode)
+            drawMinimap(w, h);
+        else
+        {
+            glColor3f(0.9f, 0.05f, 0.05f);
+            renderStr(w - 150, 235, GLUT_BITMAP_HELVETICA_12, "Minimap: OFF");
+        }
         drawDangerOverlay(w, h, t);
         if (shakeMag > 0.015f)
         {
@@ -399,6 +461,7 @@ void drawUI(int w, int h)
         glEnd();
         glDisable(GL_BLEND);
     }
+    drawHeavyJumpscare(w, h, t);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -418,7 +481,8 @@ void display()
         h = 1;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(70.f, (float)w / h, 0.05f, 140.f);
+    float fov = firstPersonMode ? (nightmareActive ? 52.0f : 58.0f) : 70.0f;
+    gluPerspective(fov, (float)w / h, 0.05f, 140.f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     if (currentState == START)
@@ -433,16 +497,19 @@ void display()
         updatePlayerLight();
         float rad = pAngle * PI / 180.f;
         float tgtX = pX + sinf(rad) * 4.f;
-        float tgtY = 0.9f;
+        float tgtY = firstPersonMode ? 1.05f : 0.9f;
         float tgtZ = pZ + cosf(rad) * 4.f;
         gluLookAt(camX, camY, camZ, tgtX, tgtY, tgtZ, 0, 1, 0);
         drawMap();
-        drawBlobShadow(pX, pZ, 0.35f);
-        glPushMatrix();
-        glTranslatef(pX, 0.38f, pZ);
-        glRotatef(pAngle, 0, 1, 0);
-        drawPacman(mouthAnim);
-        glPopMatrix();
+        if (!firstPersonMode)
+        {
+            drawBlobShadow(pX, pZ, 0.35f);
+            glPushMatrix();
+            glTranslatef(pX, 0.38f, pZ);
+            glRotatef(pAngle, 0, 1, 0);
+            drawPacman(mouthAnim);
+            glPopMatrix();
+        }
         for (int i = 0; i < NUM_GHOSTS; i++)
         {
             if (!ghosts[i].active || ghosts[i].eaten)
@@ -465,6 +532,10 @@ void updatePhysics(int value)
 {
     updateFlash();
     updateParticles();
+    if (heavyJumpscareTimer > 0)
+        heavyJumpscareTimer--;
+    if (heavyJumpscareCooldown > 0)
+        heavyJumpscareCooldown--;
     if (showJumpscare)
     {
         jumpscareTimer--;
@@ -485,7 +556,19 @@ void updatePhysics(int value)
     }
     if (currentState == PLAYING)
     {
-        float spd = 0.10f;
+        if (dashCooldown > 0)
+            dashCooldown--;
+        if (dashTimer > 0)
+            dashTimer--;
+        if (keys[32] && dashCooldown <= 0)
+        {
+            dashTimer = 12;
+            dashCooldown = 210;
+            spawnParticles(pX, 0.38f, pZ, 0.95f, 0.95f, 1.0f, 22, 0.08f);
+            triggerFlash(0.75f, 0.85f, 1.0f, 0.20f);
+        }
+
+        float spd = dashTimer > 0 ? 0.24f : 0.10f;
         float turn = 3.5f;
         float rad = pAngle * PI / 180.f;
         float nx = pX;
@@ -537,6 +620,21 @@ void updatePhysics(int value)
             triggerFlash(0.5f, 0, 0.8f, 0.5f);
             feedbackBeep("power");
         }
+        int remainingCoins = totalCoins - coins;
+        int nightmareThreshold = totalCoins / 6;
+        if (nightmareThreshold < 18)
+            nightmareThreshold = 18;
+        bool wasNightmare = nightmareActive;
+        nightmareActive = remainingCoins > 0 && remainingCoins <= nightmareThreshold;
+        if (nightmareActive && !wasNightmare)
+        {
+            triggerFlash(1.0f, 0.0f, 0.0f, 0.65f);
+            shakeMag = 0.34f;
+            for (int k = 0; k < 6; k++)
+            {
+                spawnParticles(pX, 0.8f, pZ, 1.0f, 0.0f, 0.0f, 18, 0.11f);
+            }
+        }
         if (powerActive)
         {
             powerTimer--;
@@ -566,6 +664,13 @@ void updatePhysics(int value)
             float d = sqrtf(ddx * ddx + ddz * ddz);
             if (d < minDist)
                 minDist = d;
+            if (d < 1.35f && ghosts[i].invincTimer == 0 && !powerActive && heavyJumpscareCooldown <= 0)
+            {
+                heavyJumpscareTimer = firstPersonMode ? 30 : 22;
+                heavyJumpscareCooldown = 150;
+                shakeMag = firstPersonMode ? 0.55f : 0.42f;
+                triggerFlash(1.0f, 0.0f, 0.0f, 0.85f);
+            }
             if (d < 0.75f && ghosts[i].invincTimer == 0 && !hitFrame)
             {
                 hitFrame = true;
@@ -610,7 +715,7 @@ void updatePhysics(int value)
             }
         }
         updateFogColor(minDist);
-        float dangerZone = 6.0f;
+        float dangerZone = nightmareActive ? 8.0f : 6.0f;
         float targetDanger = (minDist < dangerZone && !powerActive) ? ((dangerZone - minDist) / dangerZone) : 0.f;
         dangerLevel = dangerLevel * 0.82f + targetDanger * 0.18f;
         if (dangerLevel < 0.01f)
@@ -627,8 +732,11 @@ void updatePhysics(int value)
                 dangerParticleCooldown = 3;
         }
 
-        float shakeZone = 4.5f;
-        float want = (minDist < shakeZone && !powerActive) ? ((shakeZone - minDist) / shakeZone * 0.24f) : 0.f;
+        float shakeZone = nightmareActive ? 6.0f : 4.5f;
+        float shakePower = firstPersonMode ? 0.36f : 0.24f;
+        if (nightmareActive)
+            shakePower += 0.08f;
+        float want = (minDist < shakeZone && !powerActive) ? ((shakeZone - minDist) / shakeZone * shakePower) : 0.f;
         shakeMag = shakeMag * 0.80f + want * 0.20f;
         if (shakeMag < 0.001f)
             shakeMag = 0.f;
@@ -677,6 +785,12 @@ void keyboard(unsigned char key, int x, int y)
     if (key >= 'A' && key <= 'Z')
         key += 32;
     keys[(int)key] = true;
+    if (currentState == PLAYING && key == 'c')
+    {
+        firstPersonMode = !firstPersonMode;
+        mouseWarping = true;
+        glutWarpPointer(glutGet(GLUT_WINDOW_WIDTH) / 2, glutGet(GLUT_WINDOW_HEIGHT) / 2);
+    }
     if (currentState == START && key == 13)
     {
         initGame();

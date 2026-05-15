@@ -146,7 +146,7 @@ void updateGhost(int i)
 
     // ============== APPLY SPEED & MOVEMENT ==============
     // Saat power mode: hantu speed 60% lebih lambat (0.6x speed)
-    float spd = g.speed * (powerActive ? 0.6f : 1.0f);
+    float spd = g.speed * (powerActive ? 0.6f : (nightmareActive ? 1.42f : 1.0f));
 
     // Calculate proposed new position
     float gx2 = g.x + nx * spd;

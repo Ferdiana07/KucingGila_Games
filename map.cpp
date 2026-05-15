@@ -132,44 +132,6 @@ static void drawFloorTextureOverlay(float x, float z, int row, int col)
     glEnable(GL_LIGHTING);
 }
 
-static void drawWallLamp(float x, float z, float angle)
-{
-    glPushMatrix();
-    glTranslatef(x, 2.2f, z);
-    glRotatef(angle, 0, 1, 0);
-
-    GLfloat bAmb[] = {0.05f, 0.03f, 0.0f, 1};
-    GLfloat bDiff[] = {0.25f, 0.15f, 0.05f, 1};
-    GLfloat bSpec[] = {0.8f, 0.6f, 0.2f, 1};
-    GLfloat noEmi[] = {0, 0, 0, 1};
-    glMaterialfv(GL_FRONT, GL_AMBIENT, bAmb);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, bDiff);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, bSpec);
-    glMaterialfv(GL_FRONT, GL_EMISSION, noEmi);
-    glMaterialf(GL_FRONT, GL_SHININESS, 60);
-    glPushMatrix();
-    glScalef(0.05f, 0.05f, 0.25f);
-    glutSolidCube(1.0f);
-    glPopMatrix();
-
-    glPushMatrix();
-    glTranslatef(0, 0, 0.25f);
-    GLfloat lAmb[] = {0.3f, 0.25f, 0.0f, 1};
-    GLfloat lDiff[] = {0.8f, 0.7f, 0.1f, 1};
-    GLfloat lEmi[] = {0.9f, 0.7f, 0.1f, 1};
-    glMaterialfv(GL_FRONT, GL_AMBIENT, lAmb);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, lDiff);
-    glMaterialfv(GL_FRONT, GL_EMISSION, lEmi);
-    float flicker = 0.8f + 0.2f * sinf(glutGet(GLUT_ELAPSED_TIME) / 90.0f + x + z);
-    lEmi[0] *= flicker;
-    lEmi[1] *= flicker;
-    lEmi[2] *= flicker;
-    glMaterialfv(GL_FRONT, GL_EMISSION, lEmi);
-    glutSolidSphere(0.10f, 8, 8);
-    glPopMatrix();
-    glPopMatrix();
-}
-
 static void drawPillar(float x, float z)
 {
     glPushMatrix();
@@ -487,14 +449,6 @@ void drawMap()
                 glutSolidCube(1.0f);
                 glPopMatrix();
                 drawWallTextureOverlay(x, z, wallH, i, j);
-                if ((i == 1 || i == 8 || i == 17 || i == 23) && j % 6 == 2)
-                {
-                    drawWallLamp(x, z, 0);
-                }
-                if ((j == 1 || j == 16 || j == 31) && i % 6 == 2)
-                {
-                    drawWallLamp(x, z, 90);
-                }
                 if (i > 0 && i < MAP_ROWS - 1 && j > 0 && j < MAP_COLS - 1)
                 {
                     bool a = maze[i - 1][j] == 1, b = maze[i + 1][j] == 1;

@@ -83,10 +83,14 @@ extern int multTimer;       // Timer untuk reset multiplier
 extern int ghostEatCombo;   // Combo hantu yang dimakan berturut-turut
 extern bool powerActive;    // Flag apakah mode power pellet aktif
 extern int powerTimer;      // Sisa waktu power pellet
+extern bool nightmareActive; // Mode endgame: hantu lebih agresif saat koin hampir habis
+extern int dashCooldown;     // Cooldown dash pemain dalam frame
+extern int dashTimer;        // Durasi dash aktif dalam frame
 // ============== EXTERN VARIABEL KAMERA ==============
 extern float camX; // Posisi kamera X (lateral)
 extern float camY; // Posisi kamera Y (ketinggian mata pemain ≈ 1.6)
 extern float camZ; // Posisi kamera Z (jarak dari pemain)
+extern bool firstPersonMode; // Toggle perspektif kamera: false=third person, true=first person
 
 // ============== EXTERN VARIABEL HANTU ==============
 extern Ghost ghosts[NUM_GHOSTS]; // Array 3 hantu
@@ -104,6 +108,8 @@ extern float dangerLevel;        // Intensitas bahaya saat hantu dekat (0.0 aman
 extern int dangerParticleCooldown; // Timer kecil agar partikel bahaya tidak spawn terlalu sering
 extern bool showJumpscare;      // Flag menampilkan jumpscare image
 extern int jumpscareTimer;      // Timer durasi jumpscare
+extern int heavyJumpscareTimer; // Timer jumpscare berat saat hantu sangat dekat
+extern int heavyJumpscareCooldown; // Cooldown agar jumpscare dekat tidak spam
 extern GLuint jumpscareTexture; // Handle texture jumpscare (texture ID)
 
 // ============== FUNGSI HELPER ==============

@@ -30,7 +30,7 @@ Semua file di project ini sudah dilengkapi dengan komentar detail yang menjelask
   - Komentar: Setiap fungsi dijelaskan line-by-line (physics, blending, texture format)
 - **`player.cpp`** ⚡ - Lighting, kamera, render kucing/player
   - Komentar: setupLighting() dan updatePlayerLight() sudah lengkap dijelaskan
-  - Detail: 3 light sources, fog, attenuation, kucing putih, power mode effects
+  - Detail: 3 light sources, fog gelap, attenuation, kucing putih, power mode effects
 - **`ghost.cpp`** - Ghost AI logic
   - Fungsi: spawnGhostRandom(), updateGhost(), drawGhost()
   - AI strategy: simple chase, smart chase, power mode
@@ -126,7 +126,9 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 | `S`     | Mundur          |
 | `A`     | Putar kiri      |
 | `D`     | Putar kanan     |
+| `SPACE` | Dash cepat dengan cooldown |
 | `Mouse` | Rotasi kamera   |
+| `C`     | Toggle First Person / Third Person |
 | `ENTER` | Mulai           |
 | `R`     | Main lagi saat Game Over / Win |
 | `ESC`   | Keluar          |
@@ -137,10 +139,10 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 
 ### 1. **3 Light Source System**
 
-- **LIGHT0**: Ambient global (no shadow)
+- **LIGHT0**: Ambient global sangat rendah agar labirin lebih gelap
 - **LIGHT1**: Dynamic player light (follow pemain, berubah saat power)
 - **LIGHT2**: Lampu merah dari hantu terdekat saat danger
-- **Fog**: Exponential fog untuk depth + atmosphere. Saat hantu dekat, fog dan pencahayaan berubah merah gelap supaya suasana terasa mencekam.
+- **Fog**: Exponential fog lebih tebal untuk depth + atmosphere. Saat hantu dekat, fog dan pencahayaan berubah merah gelap supaya suasana terasa mencekam.
 - **Kenapa tembok terlihat bercahaya?** Material tembok sengaja memakai `GL_EMISSION` kecil dan retakan glow cyan agar pola bata tetap kelihatan di labirin gelap. Glow ini efek visual, bukan lampu baru.
 
 **Lokasi:** `player.cpp` - `setupLighting()`, `updatePlayerLight()`
@@ -168,6 +170,7 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 - Type 0 (Red): Simple chase
 - Type 1 (Blue): Smart chase + predict player position
 - Type 2 (Pink): Standard chase + wandering stuck detection
+- **Nightmare Chase**: aktif saat sisa koin sedikit; hantu lebih cepat dan suasana makin merah/mencekam
 
 **Lokasi:** `ghost.cpp` - `updateGhost()`
 
@@ -176,6 +179,7 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 - 148x112 pixel minimap di pojok kanan atas
 - Show player position (yellow), hantu (colored dots), maze layout
 - Cell types: wall (dark), path, coin, power pellet
+- Saat First Person, minimap disembunyikan agar mode horror terasa lebih total.
 
 **Lokasi:** `ui.cpp` - `drawMinimap()`
 
@@ -186,6 +190,15 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 - Camera vs wall (permissive untuk better view)
 
 **Lokasi:** `map.cpp` - `isWall()`, `isWallCamera()`, `collectItem()`
+
+### 6. **Dash, Nightmare, dan Jumpscare**
+
+- `SPACE` memberi dash cepat sebentar dengan cooldown.
+- Nightmare Chase aktif otomatis ketika koin hampir habis.
+- Jika hantu sangat dekat, muncul jumpscare berat, flash merah, dan camera shake.
+- Semua efek suara dimatikan; feedback dibuat visual saja.
+
+**Lokasi:** `ui.cpp` - `updatePhysics()`, `drawHeavyJumpscare()`
 
 ---
 

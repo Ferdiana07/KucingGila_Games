@@ -22,10 +22,14 @@ int multTimer = 0;
 int ghostEatCombo = 0;
 bool powerActive = false;
 int powerTimer = 0;
+bool nightmareActive = false;
+int dashCooldown = 0;
+int dashTimer = 0;
 
 float camX = 0.f;
 float camY = 1.6f;
 float camZ = 12.f;
+bool firstPersonMode = false;
 
 bool keys[256];
 bool arrowKeys[4];
@@ -39,6 +43,8 @@ int dangerParticleCooldown = 0;
 
 bool showJumpscare = false;
 int jumpscareTimer = 0;
+int heavyJumpscareTimer = 0;
+int heavyJumpscareCooldown = 0;
 GLuint jumpscareTexture = 0;
 
 // ============== SETUP LIGHTING ==============
@@ -63,7 +69,7 @@ void setupLighting()
 
     // ============== SETUP LIGHT 0 (AMBIENT) ==============
     // Ambient light: constant global illumination (tidak ada shadow)
-    GLfloat a0[] = {0.03f, 0.03f, 0.05f, 1}; // Warna ambient gelap biru
+    GLfloat a0[] = {0.008f, 0.008f, 0.014f, 1}; // Ambient dibuat sangat gelap untuk suasana horror
     GLfloat d0[] = {0, 0, 0, 1};             // Diffuse nol (no directional light)
     GLfloat p0[] = {0, 50, 0, 1};            // Posisi tinggi di atas map
     glLightfv(GL_LIGHT0, GL_AMBIENT, a0);
@@ -73,14 +79,14 @@ void setupLighting()
     // ============== SETUP FOG ==============
     // Fog effect untuk depth perception dan atmosphere
     glEnable(GL_FOG);
-    GLfloat fogCol[] = {0.02f, 0.02f, 0.04f, 1}; // Fog warna gelap biru
+    GLfloat fogCol[] = {0.006f, 0.006f, 0.012f, 1}; // Fog dasar lebih gelap
     glFogfv(GL_FOG_COLOR, fogCol);
     glFogi(GL_FOG_MODE, GL_EXP2);   // Exponential fog (smooth fade)
-    glFogf(GL_FOG_DENSITY, 0.12f);  // Fog density (0.12 = medium dense)
+    glFogf(GL_FOG_DENSITY, 0.155f); // Fog density lebih tebal supaya map terasa mencekam
     glHint(GL_FOG_HINT, GL_NICEST); // Quality hint
 
     // Set background color sama dengan fog color
-    glClearColor(0.02f, 0.02f, 0.04f, 1);
+    glClearColor(0.006f, 0.006f, 0.012f, 1);
 }
 
 // ============== UPDATE PLAYER LIGHT ==============
@@ -172,6 +178,7 @@ void updatePlayerLight()
         glLightfv(GL_LIGHT2, GL_AMBIENT, off);
         glLightfv(GL_LIGHT2, GL_DIFFUSE, off);
     }
+
 }
 
 void updateFogColor(float minGhostDist)
@@ -179,48 +186,23 @@ void updateFogColor(float minGhostDist)
     float danger = 1.0f - fminf(1.0f, minGhostDist / 6.0f);
     if (powerActive)
         danger = 0;
+    if (nightmareActive && !powerActive)
+        danger = fminf(1.0f, danger + 0.35f);
     // Saat hantu dekat, fog bergeser ke merah gelap untuk suasana horror/mencekam.
-    float fr = 0.02f + danger * 0.22f;
-    float fg = 0.02f * (1.0f - danger * 0.85f);
-    float fb = powerActive ? (0.04f + 0.1f * sinf(glutGet(GLUT_ELAPSED_TIME) / 200.0f)) : 0.04f * (1.0f - danger * 0.75f);
+    float fr = 0.006f + danger * 0.23f;
+    float fg = 0.006f * (1.0f - danger * 0.85f);
+    float fb = powerActive ? (0.018f + 0.08f * sinf(glutGet(GLUT_ELAPSED_TIME) / 200.0f)) : 0.012f * (1.0f - danger * 0.75f);
     GLfloat fogCol[] = {fr, fg, fb, 1};
     glFogfv(GL_FOG_COLOR, fogCol);
+    float density = 0.155f + danger * 0.06f + (firstPersonMode && !powerActive ? 0.045f : 0.0f);
+    glFogf(GL_FOG_DENSITY, density);
     glClearColor(fr * 0.5f, fg * 0.5f, fb * 0.5f, 1);
 }
 
 void feedbackBeep(const char *type)
 {
-    if (strcmp(type, "coin") == 0)
-    {
-        Beep(900, 35);
-    }
-    else if (strcmp(type, "power") == 0)
-    {
-        Beep(400, 60);
-        Beep(600, 60);
-        Beep(800, 80);
-    }
-    else if (strcmp(type, "eat") == 0)
-    {
-        Beep(700, 50);
-        Beep(900, 80);
-    }
-    else if (strcmp(type, "hit") == 0)
-    {
-        Beep(220, 100);
-        Beep(160, 130);
-    }
-    else if (strcmp(type, "win") == 0)
-    {
-        Beep(523, 80);
-        Beep(659, 80);
-        Beep(784, 200);
-    }
-    else if (strcmp(type, "lose") == 0)
-    {
-        Beep(300, 150);
-        Beep(200, 220);
-    }
+    (void)type;
+    // Semua efek suara game sengaja dimatikan.
 }
 
 void drawPacman(float mouthAngle)
@@ -344,6 +326,21 @@ void updateCamera()
 {
     float rad = pAngle * PI / 180.f;
     float dirX = sinf(rad), dirZ = cosf(rad);
+    if (firstPersonMode)
+    {
+        float eyeForward = 0.20f;
+        camX = pX + dirX * eyeForward;
+        camY = 1.05f;
+        camZ = pZ + dirZ * eyeForward;
+        if (shakeMag > 0.001f)
+        {
+            camX += ((float)rand() / RAND_MAX - 0.5f) * shakeMag;
+            camY += ((float)rand() / RAND_MAX - 0.5f) * shakeMag * 0.35f;
+            camZ += ((float)rand() / RAND_MAX - 0.5f) * shakeMag;
+        }
+        return;
+    }
+
     float wantDist = 2.0f, camHgt = 1.5f, bestDist = wantDist;
     for (float d = wantDist; d > 0.25f; d -= 0.07f)
     {
@@ -395,11 +392,16 @@ void initGame()
     ghostEatCombo = 0;
     powerActive = false;
     powerTimer = 0;
+    nightmareActive = false;
+    dashCooldown = 0;
+    dashTimer = 0;
     resetPlayer();
     memset(particles, 0, sizeof(particles));
     shakeMag = 0;
     dangerLevel = 0;
     dangerParticleCooldown = 0;
+    heavyJumpscareTimer = 0;
+    heavyJumpscareCooldown = 0;
     flashA = 0;
     float speedBase = 0.042f;
     for (int i = 0; i < NUM_GHOSTS; i++)

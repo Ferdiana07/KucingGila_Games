@@ -4,7 +4,7 @@
 #include "game_common.h"
 
 // ============== FUNGSI LIGHTING SETUP ==============
-// Setup 3 light sources (ambient, player light, ghost light) dan fog effect
+// Setup 3 light sources (ambient, player, ghost danger) dan fog effect
 // Menggunakan OpenGL fixed pipeline lighting untuk rendering 3D
 void setupLighting();
 
@@ -21,7 +21,7 @@ void updateFogColor(float minGhostDist);
 void drawPacman(float mouthAngle);
 
 // ============== FUNGSI AUDIO FEEDBACK ==============
-// Play beep sound effect saat makan koin ("coin"), power ("power"), atau mati ("death")
+// Audio game dimatikan; fungsi ini dipertahankan sebagai no-op agar pemanggilan lama tetap aman.
 void feedbackBeep(const char *type);
 
 // ============== FUNGSI KAMERA CONTROL ==============

@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     glutCreateWindow("Kucing Gila — Upgraded Edition");
 
     // ============== SETUP GRAPHICS ==============
-    // Setup 3 light sources (ambient, player light, ghost light) dan fog effect
+    // Setup 3 light sources (ambient, player, ghost danger) dan fog effect
     setupLighting();
 
     // Load texture untuk jumpscare effect (file "jp.bmp")

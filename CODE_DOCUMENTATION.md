@@ -92,10 +92,10 @@
 #### setupLighting()
 
 - **3 Light Sources**:
-  - LIGHT0 (Ambient): Global illumination (0.03, 0.03, 0.05)
+  - LIGHT0 (Ambient): Global illumination sangat rendah agar labirin lebih gelap
   - LIGHT1 (Player Light): Follow pemain, berubah merah saat hantu dekat dan ungu saat power mode
   - LIGHT2 (Ghost Light): Lampu merah dari hantu terdekat saat danger
-- **Fog**: Exponential fog (density=0.12) untuk atmosphere. Saat hantu dekat, fog berubah merah gelap agar suasana lebih mencekam.
+- **Fog**: Exponential fog lebih tebal untuk atmosphere. Saat hantu dekat, fog berubah merah gelap agar suasana lebih mencekam.
 - Enable GL_COLOR_MATERIAL untuk dynamic lighting
 - Enable GL_NORMALIZE untuk konsisten normal vector
 
@@ -123,11 +123,10 @@
 
 #### updateCamera()
 
-- Follow kamera dari belakang pemain
-- Kamera posisi:
-  - camX = pX + offset left/right (mouse control)
-  - camY = 1.6 (mata pemain)
-  - camZ = pZ + 12 (12 unit di belakang)
+- Mendukung 2 perspektif kamera:
+  - Third person: kamera follow dari belakang pemain, dengan collision kamera terhadap tembok
+  - First person: kamera berada di posisi mata kucing/player agar labirin terasa lebih imersif
+- Tombol `C` toggle antara first person dan third person
 - Use gluLookAt untuk point kamera ke depan pemain
 
 #### resetPlayer()
@@ -228,7 +227,7 @@
 - Render semua dinding (tembok), koin, dan power pellets
 - Dinding: 3D cube dengan satu tema warna biru/cyan gelap
 - Tembok memakai `GL_EMISSION` kecil supaya pola bata tetap terlihat di area gelap.
-- Jika terlihat ada cahaya di dinding, itu berasal dari emission material tembok, retakan glow cyan, lampu dinding, koin/power pellet, atau danger lighting.
+- Jika terlihat ada cahaya di dinding, itu berasal dari emission material tembok, retakan glow cyan, koin/power pellet, atau danger lighting.
 - Texture procedural:
   - `drawWallTextureOverlay()`: pola bata, garis mortar, dan retakan glow
   - `drawFloorTextureOverlay()`: garis tile, jejak kaki kucing, fishbone kecil
@@ -317,7 +316,9 @@ PLAYING
 | S      | Mundur                   |
 | A      | Putar kiri               |
 | D      | Putar kanan              |
+| SPACE  | Dash cepat dengan cooldown |
 | Mouse  | Rotasi kamera kiri/kanan |
+| C      | Toggle First Person / Third Person |
 | ENTER  | Mulai game               |
 | R      | Main lagi saat Game Over / Win |
 | ESC    | Exit                     |
@@ -345,6 +346,18 @@ PLAYING
 - Type 1 (Blue): Smart chase ke posisi depan pemain
 - Type 2 (Pink): Standard chase
 - Saat power: lari dari pemain dengan speed 60%
+- Nightmare Chase: aktif saat sisa koin sedikit; hantu lebih cepat dan danger zone lebih besar
+
+### Dash dan Jumpscare
+
+- `SPACE`: dash cepat selama beberapa frame, lalu masuk cooldown
+- Saat hantu sangat dekat, `heavyJumpscareTimer` memunculkan jumpscare berat, flash merah, dan camera shake
+- Semua suara dimatikan; `feedbackBeep()` sengaja menjadi no-op
+
+### First-Person Horror
+
+- Tombol `C` toggle kamera first person / third person
+- Saat first person, FOV lebih sempit, fog lebih tebal, model kucing disembunyikan, dan minimap dimatikan
 
 ### Lighting
 
@@ -382,6 +395,6 @@ PLAYING
 
 - **Language**: C++ dengan OpenGL (GLUT)
 - **Graphics**: Fixed pipeline OpenGL dengan 3 light sources
-- **Audio**: Simple beep sounds dengan feedbackBeep()
+- **Audio**: Dimatikan; feedback game memakai visual effect saja
 - **Particle System**: Max 400 particles aktif simultan
 - **Target FPS**: 60 (16ms per frame)
