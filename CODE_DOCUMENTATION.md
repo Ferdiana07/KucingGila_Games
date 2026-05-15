@@ -53,7 +53,7 @@
 #### drawBlobShadow(x, z, radius)
 
 - Draw circular shadow di bawah karakter
-- Digunakan untuk shadow pacman dan hantu
+- Digunakan untuk shadow kucing/player dan hantu
 - 24-segment circle untuk smooth rendering
 - Semi-transparent black (0,0,0,0.45f)
 
@@ -87,15 +87,15 @@
 
 ### 4. player.cpp / player.h
 
-**Fungsi**: Logic pemain, lighting, kamera, dan render pacman
+**Fungsi**: Logic pemain, lighting, kamera, dan render kucing
 
 #### setupLighting()
 
 - **3 Light Sources**:
   - LIGHT0 (Ambient): Global illumination (0.03, 0.03, 0.05)
-  - LIGHT1 (Player Light): Follow pemain, berubah saat power mode
-  - LIGHT2 (Ghost Light): Effect hantu
-- **Fog**: Exponential fog (density=0.12) untuk atmosphere, warna gelap
+  - LIGHT1 (Player Light): Follow pemain, berubah merah saat hantu dekat dan ungu saat power mode
+  - LIGHT2 (Ghost Light): Lampu merah dari hantu terdekat saat danger
+- **Fog**: Exponential fog (density=0.12) untuk atmosphere. Saat hantu dekat, fog berubah merah gelap agar suasana lebih mencekam.
 - Enable GL_COLOR_MATERIAL untuk dynamic lighting
 - Enable GL_NORMALIZE untuk konsisten normal vector
 
@@ -103,20 +103,21 @@
 
 - Update LIGHT1 position ke (pX, 1.6, pZ)
 - Jika powerActive: warna light berubah ungu/magenta dengan pulsing
-- Else: warna light kuning/oranye normal
+- Else: warna light kuning/oranye normal, lalu bergeser merah mengikuti `dangerLevel` saat hantu dekat
+- Update LIGHT2 di posisi hantu terdekat saat `dangerLevel` aktif, dengan warna merah kuat sebagai cahaya ancaman
 - Pulsing effect menggunakan sinf(time)
 
 #### updateFogColor()
 
-- Ubah warna fog berdasarkan jarak terdekat ke hantu
-- Jika hantu dekat (<3 unit): fog merah untuk menunjukkan danger
+- Ubah suasana fog berdasarkan jarak terdekat ke hantu
+- Jika hantu dekat: fog menjadi merah gelap untuk suasana horror/mencekam
 - Jika hantu jauh: fog normal gelap
-- Linear interpolation untuk smooth transition
+- Efek danger diperkuat oleh border layar, partikel merah, fog merah, dan lighting merah
 
 #### drawPacman(mouthAngle)
 
-- Draw 3D model pacman sebagai 2 sphere (body) + 1 smaller sphere (mulut)
-- Body color: yellow (0.8, 0.7, 0)
+- Draw 3D model kucing sebagai body, kepala, telinga, kaki, ekor, mata, dan hidung
+- Body/fur color: putih krem terang agar karakter terlihat lebih jelas seperti kucing
 - mouthAngle: kontrol buka/tutup mulut
 - Rendered dengan glutSolidSphere()
 
@@ -178,7 +179,8 @@
 
 - Draw 3D model hantu
 - Jika frightened: warna biru gelap
-- Else: warna sesuai type (merah/biru/pink)
+- Else: warna type hantu dibuat lebih gelap/seram
+- Mata dibuat merah menyala, ditambah alis tajam, mulut hitam, taring, dan spike kepala
 - Scale: ukuran hantu
 - Use glutSolidSphere() untuk badan
 
@@ -224,12 +226,13 @@
 #### drawMap()
 
 - Render semua dinding (tembok), koin, dan power pellets
-- Dinding: 3D cube dengan material berbeda per region
-- Setiap region punya warna unik:
-  - Top-left: Biru (cyan glow)
-  - Top-right: Magenta
-  - Bottom-left: Hijau
-  - Bottom-right: Kuning
+- Dinding: 3D cube dengan satu tema warna biru/cyan gelap
+- Tembok memakai `GL_EMISSION` kecil supaya pola bata tetap terlihat di area gelap.
+- Jika terlihat ada cahaya di dinding, itu berasal dari emission material tembok, retakan glow cyan, lampu dinding, koin/power pellet, atau danger lighting.
+- Texture procedural:
+  - `drawWallTextureOverlay()`: pola bata, garis mortar, dan retakan glow
+  - `drawFloorTextureOverlay()`: garis tile, jejak kaki kucing, fishbone kecil
+  - `drawCeilingTextureOverlay()`: sparkle/rune cyan halus di atap
 - Koin biasa: small sphere warna cyan
 - Power pellet: larger sphere warna magenta
 
@@ -253,7 +256,6 @@
 **PLAYING state**:
 
 - **3 Hearts**: Life indicator (kiri atas)
-- **Level**: "Level N" (kanan atas, bawah minimap)
 - **Coins**: "Koin: X/Y" (kanan atas, tengah)
 - **Score**: "Skor: Z" (kanan atas, bawah)
 - **Minimap**: 148x112 pixel, pojok kanan atas
@@ -262,6 +264,7 @@
   - Warna dots: hantu posisi (1 per hantu)
 - **Power Bar**: durasi power pellet saat aktif
 - **Combo Multiplier**: "x2 COMBO!" saat makan hantu
+- **Danger Overlay**: border merah berdenyut saat hantu dekat
 
 **GAME_OVER / WIN state**:
 
@@ -290,7 +293,7 @@ PLAYING
   │  └─ Screen shake
   │
   ├─ Render:
-  │  ├─ 3D World (map, hantu, pacman, particles, shadows)
+  │  ├─ 3D World (map, hantu, kucing/player, particles, shadows)
   │  ├─ HUD (score, lives, minimap)
   │  └─ Light effects (fog, flash, lighting)
   │
@@ -301,7 +304,7 @@ PLAYING
       ↓
 [Game Over / Victory Screen]
       ↓
-[Tekan ENTER untuk restart → kembali ke START]
+[Tekan R untuk main lagi → kembali ke PLAYING]
 ```
 
 ---
@@ -315,7 +318,8 @@ PLAYING
 | A      | Putar kiri               |
 | D      | Putar kanan              |
 | Mouse  | Rotasi kamera kiri/kanan |
-| ENTER  | Mulai game / Restart     |
+| ENTER  | Mulai game               |
+| R      | Main lagi saat Game Over / Win |
 | ESC    | Exit                     |
 
 ---
@@ -347,16 +351,18 @@ PLAYING
 - 3 light sources untuk atmosphere
 - Fog exponential untuk depth effect
 - Player light berubah saat power mode
-- Fog color change saat ada hantu dekat (danger indicator)
+- Saat hantu dekat, suasana berubah lewat fog merah gelap, border layar, partikel merah, dan player light merah
+- Lantai dan atap ikut terkena bias merah karena lighting dunia sengaja dibuat mencekam saat danger
+- Tembok punya emission pulsing kecil dan retakan glow agar texture tetap terbaca di labirin gelap.
 
 ---
 
 ## 💡 TIPS PENGEMBANGAN
 
-### Untuk menambah level difficulty:
+### Untuk mengatur difficulty:
 
 1. Edit `POWER_DURATION` di game_common.h (kurangi durasi power)
-2. Edit ghost speed di spawn/update (ghost.cpp)
+2. Edit `speedBase` di `initGame()` pada player.cpp
 3. Edit ghost respawn timer (lebih cepat respawn)
 
 ### Untuk menambah karakter hantu:

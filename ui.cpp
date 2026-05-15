@@ -128,6 +128,52 @@ void drawPowerBar(int w, int h)
     renderStr(w / 2 - 30, by + 10, GLUT_BITMAP_HELVETICA_12, buf);
 }
 
+void drawDangerOverlay(int w, int h, float t)
+{
+    // Danger overlay sengaja digambar di layar, bukan sebagai lampu merah di dunia 3D.
+    // Dengan begitu lantai dan atap tidak ikut berubah warna merah saat hantu mendekat.
+    if (dangerLevel <= 0.02f || powerActive)
+        return;
+
+    float pulse = 0.55f + 0.45f * fabsf(sinf(t * 11.0f));
+    float alpha = dangerLevel * (0.18f + 0.22f * pulse);
+    int border = 8 + (int)(dangerLevel * 22.0f);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.85f, 0.0f, 0.0f, alpha);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(w, 0);
+    glVertex2f(w, border);
+    glVertex2f(0, border);
+    glVertex2f(0, h - border);
+    glVertex2f(w, h - border);
+    glVertex2f(w, h);
+    glVertex2f(0, h);
+    glVertex2f(0, 0);
+    glVertex2f(border, 0);
+    glVertex2f(border, h);
+    glVertex2f(0, h);
+    glVertex2f(w - border, 0);
+    glVertex2f(w, 0);
+    glVertex2f(w, h);
+    glVertex2f(w - border, h);
+    glEnd();
+
+    if (dangerLevel > 0.72f)
+    {
+        glColor4f(0.55f, 0.0f, 0.0f, 0.10f + 0.12f * pulse);
+        glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(w, 0);
+        glVertex2f(w, h);
+        glVertex2f(0, h);
+        glEnd();
+    }
+    glDisable(GL_BLEND);
+}
+
 void drawJumpscare(int w, int h)
 {
     glDisable(GL_LIGHTING);
@@ -215,8 +261,6 @@ void drawUI(int w, int h)
             drawHeart(28.f + i * 36.f, 28.f, 20.f);
         }
         glColor3f(0.8f, 0.5f, 1.0f);
-        sprintf(buf, "Level %d", level);
-        renderStr(w - 150, 135, GLUT_BITMAP_HELVETICA_12, buf);
         glColor3f(0.4f, 0.9f, 1.0f);
         sprintf(buf, "Koin: %d/%d", coins, totalCoins);
         renderStr(w - 150, 155, GLUT_BITMAP_HELVETICA_12, buf);
@@ -232,6 +276,7 @@ void drawUI(int w, int h)
         }
         drawPowerBar(w, h);
         drawMinimap(w, h);
+        drawDangerOverlay(w, h, t);
         if (shakeMag > 0.015f)
         {
             float alpha = 0.20f + 0.40f * fabsf(sinf(t * PI * 2));
@@ -328,7 +373,7 @@ void drawUI(int w, int h)
         glColor3f(r2, g2, b2);
         renderStr(w / 2 - 60, h / 2 - 65, GLUT_BITMAP_TIMES_ROMAN_24, "YOU WIN!");
         glColor3f(0.8f, 0.8f, 0.8f);
-        sprintf(buf, "Level %d Selesai!", level);
+        sprintf(buf, "Semua koin terkumpul!");
         renderStr(w / 2 - 80, h / 2 - 20, GLUT_BITMAP_HELVETICA_18, buf);
         sprintf(buf, "Skor: %d", score);
         glColor3f(1, 0.85f, 0);
@@ -339,7 +384,7 @@ void drawUI(int w, int h)
             renderStr(w / 2 - 85, h / 2 + 38, GLUT_BITMAP_HELVETICA_12, "*** NEW HIGH SCORE! ***");
         }
         glColor3f(0.7f, 0.7f, 0.7f);
-        renderStr(w / 2 - 115, h / 2 + 70, GLUT_BITMAP_HELVETICA_18, "Tekan  R  untuk Level Berikutnya");
+        renderStr(w / 2 - 105, h / 2 + 70, GLUT_BITMAP_HELVETICA_18, "Tekan  R  untuk Main Lagi");
     }
     if (flashA > 0.01f)
     {
@@ -565,8 +610,25 @@ void updatePhysics(int value)
             }
         }
         updateFogColor(minDist);
+        float dangerZone = 6.0f;
+        float targetDanger = (minDist < dangerZone && !powerActive) ? ((dangerZone - minDist) / dangerZone) : 0.f;
+        dangerLevel = dangerLevel * 0.82f + targetDanger * 0.18f;
+        if (dangerLevel < 0.01f)
+            dangerLevel = 0;
+
+        if (dangerParticleCooldown > 0)
+            dangerParticleCooldown--;
+        if (dangerLevel > 0.35f && dangerParticleCooldown <= 0)
+        {
+            int count = 2 + (int)(dangerLevel * 5.0f);
+            spawnParticles(pX, 0.45f, pZ, 1.0f, 0.05f, 0.02f, count, 0.025f + dangerLevel * 0.035f);
+            dangerParticleCooldown = 10 - (int)(dangerLevel * 6.0f);
+            if (dangerParticleCooldown < 3)
+                dangerParticleCooldown = 3;
+        }
+
         float shakeZone = 4.5f;
-        float want = (minDist < shakeZone && !powerActive) ? ((shakeZone - minDist) / shakeZone * 0.18f) : 0.f;
+        float want = (minDist < shakeZone && !powerActive) ? ((shakeZone - minDist) / shakeZone * 0.24f) : 0.f;
         shakeMag = shakeMag * 0.80f + want * 0.20f;
         if (shakeMag < 0.001f)
             shakeMag = 0.f;
@@ -617,7 +679,6 @@ void keyboard(unsigned char key, int x, int y)
     keys[(int)key] = true;
     if (currentState == START && key == 13)
     {
-        level = 1;
         initGame();
         currentState = PLAYING;
         glutSetCursor(GLUT_CURSOR_NONE);
@@ -628,7 +689,6 @@ void keyboard(unsigned char key, int x, int y)
     }
     if (currentState == GAME_OVER && key == 'r')
     {
-        level = 1;
         initGame();
         currentState = PLAYING;
         glutSetCursor(GLUT_CURSOR_NONE);
@@ -639,10 +699,7 @@ void keyboard(unsigned char key, int x, int y)
     }
     if (currentState == WIN && key == 'r')
     {
-        level++;
-        int oldScore = score;
         initGame();
-        score = oldScore;
         currentState = PLAYING;
         glutSetCursor(GLUT_CURSOR_NONE);
         int w = glutGet(GLUT_WINDOW_WIDTH);
@@ -676,7 +733,6 @@ void specialKey(int key, int x, int y)
         arrowKeys[3] = true;
     if (currentState == START)
     {
-        level = 1;
         initGame();
         currentState = PLAYING;
         glutSetCursor(GLUT_CURSOR_NONE);

@@ -154,7 +154,7 @@ void updateFlash()
 
 // ============== DRAW BLOB SHADOW ==============
 // Fungsi: Draw shadow blob (bayangan) di bawah karakter
-// Digunakan untuk shadow karakter pacman dan hantu agar terlihat terhubung dengan ground
+// Digunakan untuk shadow karakter kucing dan hantu agar terlihat terhubung dengan ground
 void drawBlobShadow(float x, float z, float radius)
 {
     // Disable lighting agar shadow consistent

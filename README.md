@@ -1,6 +1,6 @@
 # 🎮 KUCING GILA - UPGRADED EDITION
 
-Game 3D Pacman-like berbasis OpenGL dengan 3 hantu AI yang mengejar pemain dalam labirin gelap.
+Game 3D Pacman-like berbasis OpenGL dengan kucing putih krem, 3 hantu AI, labirin gelap, texture procedural, dan efek bahaya saat hantu mendekat.
 
 ## 📁 STRUKTUR FILE DAN KOMENTAR
 
@@ -13,7 +13,7 @@ Semua file di project ini sudah dilengkapi dengan komentar detail yang menjelask
 - **`effects.h`** - Fungsi untuk particle effects, flash, shadow, texture loading
   - Komentar: Setiap fungsi dijelaskan inputnya dan kegunaannya
 
-- **`player.h`** - Fungsi untuk lighting, kamera, render pacman
+- **`player.h`** - Fungsi untuk lighting, kamera, render kucing/player
   - Komentar: Detail setiap fungsi lighting dan rendering
 
 - **`ghost.h`** - Fungsi untuk AI hantu dan pathfinding
@@ -28,16 +28,16 @@ Semua file di project ini sudah dilengkapi dengan komentar detail yang menjelask
   - Komentar: Lengkap untuk setiap GLUT callback registration
 - **`effects.cpp`** ✅ - Particle system, flash effects, texture loading
   - Komentar: Setiap fungsi dijelaskan line-by-line (physics, blending, texture format)
-- **`player.cpp`** ⚡ - Lighting, kamera, render pacman
+- **`player.cpp`** ⚡ - Lighting, kamera, render kucing/player
   - Komentar: setupLighting() dan updatePlayerLight() sudah lengkap dijelaskan
-  - Detail: 3 light sources, fog, attenuation, power mode effects
+  - Detail: 3 light sources, fog, attenuation, kucing putih, power mode effects
 - **`ghost.cpp`** - Ghost AI logic
   - Fungsi: spawnGhostRandom(), updateGhost(), drawGhost()
   - AI strategy: simple chase, smart chase, power mode
 - **`map.cpp`** - Map layout, collision, item collection
-  - Detail: Maze grid, collision detection, item spawn points
+  - Detail: Maze grid, collision detection, item spawn points, texture procedural tembok/lantai/atap
 - **`ui.cpp`** - UI rendering (menu, HUD, minimap, score)
-  - Fungsi: renderStr(), drawText(), drawMinimap(), drawUI()
+  - Fungsi: renderStr(), drawText(), drawMinimap(), drawUI(), danger overlay
 
 ### 📖 DOKUMENTASI LENGKAP
 
@@ -127,7 +127,8 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 | `A`     | Putar kiri      |
 | `D`     | Putar kanan     |
 | `Mouse` | Rotasi kamera   |
-| `ENTER` | Mulai / Restart |
+| `ENTER` | Mulai           |
+| `R`     | Main lagi saat Game Over / Win |
 | `ESC`   | Keluar          |
 
 ---
@@ -138,10 +139,20 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 
 - **LIGHT0**: Ambient global (no shadow)
 - **LIGHT1**: Dynamic player light (follow pemain, berubah saat power)
-- **LIGHT2**: Bonus ghost light
-- **Fog**: Exponential fog untuk depth + atmosphere
+- **LIGHT2**: Lampu merah dari hantu terdekat saat danger
+- **Fog**: Exponential fog untuk depth + atmosphere. Saat hantu dekat, fog dan pencahayaan berubah merah gelap supaya suasana terasa mencekam.
+- **Kenapa tembok terlihat bercahaya?** Material tembok sengaja memakai `GL_EMISSION` kecil dan retakan glow cyan agar pola bata tetap kelihatan di labirin gelap. Glow ini efek visual, bukan lampu baru.
 
 **Lokasi:** `player.cpp` - `setupLighting()`, `updatePlayerLight()`
+
+### 1b. **Procedural Texture & Dekor**
+
+- Tembok punya pola bata, garis mortar, dan retakan glow kecil.
+- Lantai punya garis tile, jejak kaki kucing, dan fishbone kecil.
+- Atap punya sparkle/rune cyan halus.
+- Semua dibuat langsung dengan primitive OpenGL, jadi tidak perlu tambah file gambar.
+
+**Lokasi:** `map.cpp` - `drawWallTextureOverlay()`, `drawFloorTextureOverlay()`, `drawCeilingTextureOverlay()`
 
 ### 2. **Particle Effect System**
 
@@ -164,7 +175,7 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 
 - 148x112 pixel minimap di pojok kanan atas
 - Show player position (yellow), hantu (colored dots), maze layout
-- Cell types: wall (dark), path (different colors per region)
+- Cell types: wall (dark), path, coin, power pellet
 
 **Lokasi:** `ui.cpp` - `drawMinimap()`
 
@@ -187,6 +198,7 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 | Max active ghosts | 3                            |
 | Max particles     | 400                          |
 | Power duration    | 300 frames (~5 sec @ 60 FPS) |
+| Level system      | Tidak ada; menang berarti game selesai |
 | Target FPS        | 60                           |
 | Window size       | 1024×720 pixels              |
 

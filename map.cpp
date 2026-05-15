@@ -42,91 +42,94 @@ const float offsetZ = (MAP_ROWS - 1) / 2.0f;
 
 static void setWallMaterial(int row, int col)
 {
-    float qr = (float)row / MAP_ROWS;
-    float qc = (float)col / MAP_COLS;
     GLfloat amb[4], diff[4], spec[4], emi[4] = {0, 0, 0, 1};
-    float pulse = 0.5f + 0.5f * sinf(glutGet(GLUT_ELAPSED_TIME) / 800.0f + row * 0.3f + col * 0.5f);
-    if (qr < 0.5f && qc < 0.5f)
-    {
-        amb[0] = 0.01f;
-        amb[1] = 0.08f;
-        amb[2] = 0.1f;
-        amb[3] = 1;
-        diff[0] = 0.02f;
-        diff[1] = 0.1f;
-        diff[2] = 0.15f;
-        diff[3] = 1;
-        spec[0] = 0.2f;
-        spec[1] = 0.8f;
-        spec[2] = 1.0f;
-        spec[3] = 1;
-        emi[0] = 0;
-        emi[1] = 0.1f + 0.08f * pulse;
-        emi[2] = 0.25f + 0.1f * pulse;
-        emi[3] = 1;
-    }
-    else if (qr < 0.5f && qc >= 0.5f)
-    {
-        amb[0] = 0.1f;
-        amb[1] = 0.01f;
-        amb[2] = 0.1f;
-        amb[3] = 1;
-        diff[0] = 0.15f;
-        diff[1] = 0.02f;
-        diff[2] = 0.15f;
-        diff[3] = 1;
-        spec[0] = 1.0f;
-        spec[1] = 0.2f;
-        spec[2] = 1.0f;
-        spec[3] = 1;
-        emi[0] = 0.28f + 0.1f * pulse;
-        emi[1] = 0;
-        emi[2] = 0.28f + 0.1f * pulse;
-        emi[3] = 1;
-    }
-    else if (qr >= 0.5f && qc < 0.5f)
-    {
-        amb[0] = 0.02f;
-        amb[1] = 0.1f;
-        amb[2] = 0.02f;
-        amb[3] = 1;
-        diff[0] = 0.05f;
-        diff[1] = 0.15f;
-        diff[2] = 0.05f;
-        diff[3] = 1;
-        spec[0] = 0.2f;
-        spec[1] = 1.0f;
-        spec[2] = 0.2f;
-        spec[3] = 1;
-        emi[0] = 0.04f;
-        emi[1] = 0.22f + 0.08f * pulse;
-        emi[2] = 0.04f;
-        emi[3] = 1;
-    }
-    else
-    {
-        amb[0] = 0.1f;
-        amb[1] = 0.02f;
-        amb[2] = 0.01f;
-        amb[3] = 1;
-        diff[0] = 0.15f;
-        diff[1] = 0.05f;
-        diff[2] = 0.02f;
-        diff[3] = 1;
-        spec[0] = 1.0f;
-        spec[1] = 0.3f;
-        spec[2] = 0.1f;
-        spec[3] = 1;
-        emi[0] = 0.28f + 0.1f * pulse;
-        emi[1] = 0.04f;
-        emi[2] = 0;
-        emi[3] = 1;
-    }
+    // Tembok memakai glow/emission pelan agar texture bata tetap terlihat di labirin gelap.
+    // Nilainya memakai posisi cell supaya denyut tiap tembok tidak seragam.
+    float pulse = 0.5f + 0.5f * sinf(glutGet(GLUT_ELAPSED_TIME) / 850.0f + row * 0.27f + col * 0.33f);
+
+    amb[0] = 0.015f;
+    amb[1] = 0.055f;
+    amb[2] = 0.070f;
+    amb[3] = 1;
+
+    diff[0] = 0.035f;
+    diff[1] = 0.120f;
+    diff[2] = 0.155f;
+    diff[3] = 1;
+
+    spec[0] = 0.25f;
+    spec[1] = 0.75f;
+    spec[2] = 0.95f;
+    spec[3] = 1;
+
+    emi[0] = 0.000f;
+    emi[1] = 0.055f + 0.045f * pulse;
+    emi[2] = 0.110f + 0.070f * pulse;
+    emi[3] = 1;
+
     glMaterialfv(GL_FRONT, GL_AMBIENT, amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diff);
     glMaterialfv(GL_FRONT, GL_SPECULAR, spec);
     glMaterialfv(GL_FRONT, GL_EMISSION, emi);
     glMaterialf(GL_FRONT, GL_SHININESS, 80.0f);
+}
+
+static void drawFloorDisc(float cx, float zc, float radius, float y)
+{
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(cx, y, zc);
+    for (int a = 0; a <= 14; a++)
+    {
+        float ang = a * (2 * PI / 14);
+        glVertex3f(cx + cosf(ang) * radius, y, zc + sinf(ang) * radius);
+    }
+    glEnd();
+}
+
+static void drawFloorTextureOverlay(float x, float z, int row, int col)
+{
+    float y = 0.018f;
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glLineWidth(1.0f);
+    glColor4f(0.08f, 0.42f, 0.55f, 0.22f);
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(x - 0.48f, y, z - 0.48f);
+    glVertex3f(x - 0.48f, y, z + 0.48f);
+    glVertex3f(x + 0.48f, y, z + 0.48f);
+    glVertex3f(x + 0.48f, y, z - 0.48f);
+    glEnd();
+
+    if ((row * 3 + col * 5) % 11 == 0)
+    {
+        // Jejak kaki kecil supaya tema kucing terasa lebih playful.
+        glColor4f(0.70f, 0.95f, 1.0f, 0.34f);
+        drawFloorDisc(x, z, 0.085f, y + 0.004f);
+        drawFloorDisc(x - 0.09f, z + 0.10f, 0.035f, y + 0.004f);
+        drawFloorDisc(x, z + 0.13f, 0.035f, y + 0.004f);
+        drawFloorDisc(x + 0.09f, z + 0.10f, 0.035f, y + 0.004f);
+    }
+    else if ((row * 7 + col * 2) % 13 == 0)
+    {
+        // Fishbone sederhana dari garis, tanpa perlu asset gambar.
+        glColor4f(0.65f, 0.90f, 1.0f, 0.32f);
+        glBegin(GL_LINES);
+        glVertex3f(x - 0.18f, y + 0.004f, z);
+        glVertex3f(x + 0.18f, y + 0.004f, z);
+        for (float s = -0.10f; s <= 0.10f; s += 0.10f)
+        {
+            glVertex3f(x + s, y + 0.004f, z);
+            glVertex3f(x + s - 0.07f, y + 0.004f, z + 0.08f);
+            glVertex3f(x + s, y + 0.004f, z);
+            glVertex3f(x + s + 0.07f, y + 0.004f, z - 0.08f);
+        }
+        glEnd();
+    }
+
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
 }
 
 static void drawWallLamp(float x, float z, float angle)
@@ -189,6 +192,114 @@ static void drawPillar(float x, float z)
     glPopMatrix();
 }
 
+static void drawWallTextureOverlay(float x, float z, float wallH, int row, int col)
+{
+    float pulse = 0.35f + 0.65f * sinf(glutGet(GLUT_ELAPSED_TIME) / 700.0f + row * 0.4f + col * 0.25f);
+    float brickShift = ((row + col) % 2) ? 0.25f : 0.0f;
+    float edge = 0.506f;
+
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glLineWidth(1.0f);
+
+    glColor4f(0.0f, 0.0f, 0.0f, 0.34f);
+    for (int face = 0; face < 4; face++)
+    {
+        for (float y = 0.55f; y < wallH; y += 0.55f)
+        {
+            glBegin(GL_LINES);
+            if (face == 0)
+            {
+                glVertex3f(x - edge, y, z - edge);
+                glVertex3f(x + edge, y, z - edge);
+            }
+            else if (face == 1)
+            {
+                glVertex3f(x - edge, y, z + edge);
+                glVertex3f(x + edge, y, z + edge);
+            }
+            else if (face == 2)
+            {
+                glVertex3f(x - edge, y, z - edge);
+                glVertex3f(x - edge, y, z + edge);
+            }
+            else
+            {
+                glVertex3f(x + edge, y, z - edge);
+                glVertex3f(x + edge, y, z + edge);
+            }
+            glEnd();
+        }
+
+        for (float y = 0.0f; y < wallH; y += 1.10f)
+        {
+            for (float s = -0.25f + brickShift; s < 0.51f; s += 0.50f)
+            {
+                float y2 = fminf(y + 0.55f, wallH);
+                glBegin(GL_LINES);
+                if (face == 0)
+                {
+                    glVertex3f(x + s, y, z - edge);
+                    glVertex3f(x + s, y2, z - edge);
+                }
+                else if (face == 1)
+                {
+                    glVertex3f(x + s, y, z + edge);
+                    glVertex3f(x + s, y2, z + edge);
+                }
+                else if (face == 2)
+                {
+                    glVertex3f(x - edge, y, z + s);
+                    glVertex3f(x - edge, y2, z + s);
+                }
+                else
+                {
+                    glVertex3f(x + edge, y, z + s);
+                    glVertex3f(x + edge, y2, z + s);
+                }
+                glEnd();
+            }
+        }
+    }
+
+    if ((row * 7 + col * 11) % 5 == 0)
+    {
+        // Retakan glow cyan dikembalikan agar tembok tidak terlihat polos/hitam.
+        glColor4f(0.2f + 0.35f * pulse, 0.75f * pulse, 1.0f * pulse, 0.45f);
+        glBegin(GL_LINE_STRIP);
+        glVertex3f(x - 0.30f, wallH * 0.82f, z - edge - 0.002f);
+        glVertex3f(x - 0.10f, wallH * 0.62f, z - edge - 0.002f);
+        glVertex3f(x - 0.18f, wallH * 0.42f, z - edge - 0.002f);
+        glVertex3f(x + 0.18f, wallH * 0.24f, z - edge - 0.002f);
+        glEnd();
+    }
+
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
+}
+
+static void drawCeilingTextureOverlay(float x, float z, float y, int row, int col)
+{
+    if ((row * 5 + col * 3) % 9 != 0)
+        return;
+
+    float pulse = 0.55f + 0.45f * sinf(glutGet(GLUT_ELAPSED_TIME) / 500.0f + row + col);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glLineWidth(1.0f);
+    glColor4f(0.25f, 0.85f, 1.0f, 0.18f + 0.20f * pulse);
+    glBegin(GL_LINES);
+    glVertex3f(x - 0.13f, y - 0.018f, z);
+    glVertex3f(x + 0.13f, y - 0.018f, z);
+    glVertex3f(x, y - 0.018f, z - 0.13f);
+    glVertex3f(x, y - 0.018f, z + 0.13f);
+    glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_LIGHTING);
+}
+
 static void drawCeiling()
 {
     float wallH = 3.2f;
@@ -217,6 +328,7 @@ static void drawCeiling()
             glVertex3f(x + 0.5f, wallH, z + 0.5f);
             glVertex3f(x - 0.5f, wallH, z + 0.5f);
             glEnd();
+            drawCeilingTextureOverlay(x, z, wallH, i, j);
         }
     }
 }
@@ -352,6 +464,7 @@ void drawMap()
             glVertex3f(x + 0.5f, 0, z + 0.5f);
             glVertex3f(x + 0.5f, 0, z - 0.5f);
             glEnd();
+            drawFloorTextureOverlay(x, z, i, j);
         }
     }
 
@@ -373,6 +486,7 @@ void drawMap()
                 glScalef(1.0f, wallH, 1.0f);
                 glutSolidCube(1.0f);
                 glPopMatrix();
+                drawWallTextureOverlay(x, z, wallH, i, j);
                 if ((i == 1 || i == 8 || i == 17 || i == 23) && j % 6 == 2)
                 {
                     drawWallLamp(x, z, 0);
@@ -393,6 +507,17 @@ void drawMap()
             }
             else if (maze[i][j] == 2)
             {
+                // ================= COIN / KOIN BIASA (nilai maze == 2) =================
+                // Letak pembuatan coin/pellet ada di drawMap() pada kondisi:
+                //   - maze[i][j] == 2  -> coin biasa
+                //   - maze[i][j] == 3  -> power pellet
+                //
+                // Kenapa bentuknya seperti ikan?
+                // Model coin dibuat bukan dari sprite/mesh khusus, tetapi gabungan primitive:
+                //   1) glTranslatef(..., fishY, ...) + glRotatef(fishRot, ...) -> animasi seperti berenang
+                //   2) glutSolidSphere(...)                               -> badan/“tubuh” ikan
+                //   3) glutSolidCone(...) yang di-rotate 90 derajat      -> sirip/ekor
+                // Jadi "ikan" terlihat karena ada badan sphere + ekor (cone) + rotasi/gelombang (sinus).
                 GLfloat ca[] = {0.1f, 0.4f, 0.5f, 1};
                 GLfloat cd[] = {0.4f, 0.8f, 1.0f, 1};
                 GLfloat cs[] = {1, 1, 1, 1};
@@ -422,6 +547,12 @@ void drawMap()
             }
             else if (maze[i][j] == 3)
             {
+                // ================= POWER PELLET (nilai maze == 3) =================
+                // Pellet dibuat di drawMap() pada kondisi maze[i][j] == 3.
+                // Bentuknya juga "berasa" organik karena ada animasi sinus:
+                //   - ppY dipulskan (float ppY = 0.38 + ... sinf(...))
+                //   - seluruh pellet diputar (glRotatef(..., 0,1,0))
+                // Walau komponennya tidak pakai cone seperti coin, animasi ini membuatnya terlihat hidup.
                 float pulse2 = 0.7f + 0.3f * sinf(t * 6.0f + x + z);
                 GLfloat ppa[] = {0.3f, 0.0f, 0.3f, 1};
                 GLfloat ppd[] = {0.8f, 0.0f, 0.8f, 1};

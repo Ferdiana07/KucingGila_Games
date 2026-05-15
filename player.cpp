@@ -22,7 +22,6 @@ int multTimer = 0;
 int ghostEatCombo = 0;
 bool powerActive = false;
 int powerTimer = 0;
-int level = 1;
 
 float camX = 0.f;
 float camY = 1.6f;
@@ -35,6 +34,8 @@ bool mouseWarping = false;
 
 float shakeMag = 0.0f;
 float shakeDecay = 0.82f;
+float dangerLevel = 0.0f;
+int dangerParticleCooldown = 0;
 
 bool showJumpscare = false;
 int jumpscareTimer = 0;
@@ -108,19 +109,21 @@ void updatePlayerLight()
         dif[2] = 0.9f * pulse;
         dif[3] = 1;
     }
-    // ============== NORMAL MODE - YELLOW LIGHT ==============
+    // ============== NORMAL MODE - WARM LIGHT ==============
     else
     {
-        // Ambient: warm yellowish tone
-        amb[0] = 0.06f;
-        amb[1] = 0.04f;
-        amb[2] = 0.01f;
+        // Saat hantu mendekat, lampu pemain ikut berubah merah agar suasana dunia terasa mencekam.
+        // dangerLevel dihitung dari jarak hantu terdekat di updatePhysics().
+        float dangerPulse = dangerLevel * (0.55f + 0.45f * fabsf(sinf(glutGet(GLUT_ELAPSED_TIME) / 45.0f)));
+
+        amb[0] = 0.06f + 0.16f * dangerPulse;
+        amb[1] = 0.04f * (1.0f - 0.70f * dangerPulse);
+        amb[2] = 0.01f * (1.0f - 0.80f * dangerPulse);
         amb[3] = 1;
 
-        // Diffuse: strong yellow/orange normal mode
-        dif[0] = 0.70f;
-        dif[1] = 0.50f;
-        dif[2] = 0.20f;
+        dif[0] = 0.70f + 0.55f * dangerPulse;
+        dif[1] = 0.50f * (1.0f - 0.82f * dangerPulse);
+        dif[2] = 0.20f * (1.0f - 0.90f * dangerPulse);
         dif[3] = 1;
     }
 
@@ -133,6 +136,42 @@ void updatePlayerLight()
     glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.0f);   // Base = 1.0
     glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.20f);    // Linear = 0.2*d
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.07f); // Quadratic = 0.07*d^2
+
+    float nearestDist = 999.0f;
+    int nearestGhost = -1;
+    for (int i = 0; i < NUM_GHOSTS; i++)
+    {
+        if (!ghosts[i].active || ghosts[i].eaten)
+            continue;
+        float dx = ghosts[i].x - pX;
+        float dz = ghosts[i].z - pZ;
+        float d = sqrtf(dx * dx + dz * dz);
+        if (d < nearestDist)
+        {
+            nearestDist = d;
+            nearestGhost = i;
+        }
+    }
+
+    if (nearestGhost >= 0 && dangerLevel > 0.02f && !powerActive)
+    {
+        float pulse = dangerLevel * (0.55f + 0.45f * fabsf(sinf(glutGet(GLUT_ELAPSED_TIME) / 55.0f)));
+        GLfloat gpos[] = {ghosts[nearestGhost].x, 1.2f, ghosts[nearestGhost].z, 1};
+        GLfloat gamb[] = {0.08f * pulse, 0.0f, 0.0f, 1};
+        GLfloat gdif[] = {1.15f * pulse, 0.03f * pulse, 0.02f * pulse, 1};
+        glLightfv(GL_LIGHT2, GL_POSITION, gpos);
+        glLightfv(GL_LIGHT2, GL_AMBIENT, gamb);
+        glLightfv(GL_LIGHT2, GL_DIFFUSE, gdif);
+        glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 1.0f);
+        glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.12f);
+        glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 0.04f);
+    }
+    else
+    {
+        GLfloat off[] = {0, 0, 0, 1};
+        glLightfv(GL_LIGHT2, GL_AMBIENT, off);
+        glLightfv(GL_LIGHT2, GL_DIFFUSE, off);
+    }
 }
 
 void updateFogColor(float minGhostDist)
@@ -140,9 +179,10 @@ void updateFogColor(float minGhostDist)
     float danger = 1.0f - fminf(1.0f, minGhostDist / 6.0f);
     if (powerActive)
         danger = 0;
-    float fr = 0.02f + danger * 0.18f;
-    float fg = 0.02f * (1 - danger);
-    float fb = powerActive ? (0.04f + 0.1f * sinf(glutGet(GLUT_ELAPSED_TIME) / 200.0f)) : 0.04f * (1 - danger * 0.5f);
+    // Saat hantu dekat, fog bergeser ke merah gelap untuk suasana horror/mencekam.
+    float fr = 0.02f + danger * 0.22f;
+    float fg = 0.02f * (1.0f - danger * 0.85f);
+    float fb = powerActive ? (0.04f + 0.1f * sinf(glutGet(GLUT_ELAPSED_TIME) / 200.0f)) : 0.04f * (1.0f - danger * 0.75f);
     GLfloat fogCol[] = {fr, fg, fb, 1};
     glFogfv(GL_FOG_COLOR, fogCol);
     glClearColor(fr * 0.5f, fg * 0.5f, fb * 0.5f, 1);
@@ -187,9 +227,9 @@ void drawPacman(float mouthAngle)
 {
     float t = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     glPushMatrix();
-    GLfloat fur_amb[] = {0.15f, 0.08f, 0.02f, 1};
-    GLfloat fur_diff[] = {0.55f, 0.35f, 0.15f, 1};
-    GLfloat fur_spec[] = {0.4f, 0.3f, 0.2f, 1};
+    GLfloat fur_amb[] = {0.28f, 0.27f, 0.23f, 1};
+    GLfloat fur_diff[] = {0.98f, 0.96f, 0.86f, 1};
+    GLfloat fur_spec[] = {0.90f, 0.86f, 0.70f, 1};
     GLfloat no_emi[] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT, GL_AMBIENT, fur_amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, fur_diff);
@@ -358,8 +398,10 @@ void initGame()
     resetPlayer();
     memset(particles, 0, sizeof(particles));
     shakeMag = 0;
+    dangerLevel = 0;
+    dangerParticleCooldown = 0;
     flashA = 0;
-    float speedBase = 0.038f + level * 0.004f;
+    float speedBase = 0.042f;
     for (int i = 0; i < NUM_GHOSTS; i++)
     {
         ghosts[i].speed = speedBase + i * 0.010f;

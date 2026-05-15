@@ -71,7 +71,7 @@ extern float flashR, flashG, flashB, flashA; // Color flash effect (kilatan laya
 // ============== EXTERN VARIABEL PEMAIN ==============
 extern float pX, pZ;        // Posisi pemain (X=kolom, Z=baris)
 extern float pAngle;        // Arah hadap pemain dalam derajat (0-360)
-extern float mouthAnim;     // Animasi mulut pacman (buka/tutup)
+extern float mouthAnim;     // Animasi mulut kucing/player (buka/tutup)
 extern float mouthDir;      // Arah animasi mulut (1 atau -1)
 extern int lives;           // Jumlah nyawa pemain (max 3)
 extern int coins;           // Jumlah koin yang sudah dikumpulkan
@@ -83,8 +83,6 @@ extern int multTimer;       // Timer untuk reset multiplier
 extern int ghostEatCombo;   // Combo hantu yang dimakan berturut-turut
 extern bool powerActive;    // Flag apakah mode power pellet aktif
 extern int powerTimer;      // Sisa waktu power pellet
-extern int level;           // Level game saat ini
-
 // ============== EXTERN VARIABEL KAMERA ==============
 extern float camX; // Posisi kamera X (lateral)
 extern float camY; // Posisi kamera Y (ketinggian mata pemain ≈ 1.6)
@@ -102,6 +100,8 @@ extern bool mouseWarping;      // Flag untuk disable mouse centering
 // ============== EXTERN VARIABEL EFEK ==============
 extern float shakeMag;          // Magnitude screen shake (guncangan layar)
 extern float shakeDecay;        // Decay rate untuk screen shake effect
+extern float dangerLevel;        // Intensitas bahaya saat hantu dekat (0.0 aman, 1.0 sangat dekat)
+extern int dangerParticleCooldown; // Timer kecil agar partikel bahaya tidak spawn terlalu sering
 extern bool showJumpscare;      // Flag menampilkan jumpscare image
 extern int jumpscareTimer;      // Timer durasi jumpscare
 extern GLuint jumpscareTexture; // Handle texture jumpscare (texture ID)

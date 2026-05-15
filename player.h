@@ -16,8 +16,8 @@ void updatePlayerLight();
 // Update warna fog berdasarkan jarak terdekat ke hantu (red saat dekat hantu)
 void updateFogColor(float minGhostDist);
 
-// ============== FUNGSI RENDER PACMAN ==============
-// Draw 3D model pacman di posisi pemain dengan animasi mulut
+// ============== FUNGSI RENDER KUCING ==============
+// Draw 3D model kucing di posisi pemain dengan animasi mulut
 void drawPacman(float mouthAngle);
 
 // ============== FUNGSI AUDIO FEEDBACK ==============

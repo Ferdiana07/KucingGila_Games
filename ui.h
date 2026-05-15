@@ -33,7 +33,7 @@ void drawJumpscare(int w, int h);
 // ============== MAIN UI RENDERING ==============
 // Draw semua UI elements berdasarkan game state:
 // - START: menu screen, instructions, high score
-// - PLAYING: HUD (lives, score, coins, level, minimap, power bar)
+// - PLAYING: HUD (lives, score, coins, minimap, power bar)
 // - GAME_OVER/WIN: end screen dengan restart instruction
 void drawUI(int w, int h);
 

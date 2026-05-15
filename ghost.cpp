@@ -208,11 +208,11 @@ void drawGhost(bool frightened, float scale, int ghostIndex, float frightenTimer
     glScalef(scale, scale, scale);
 
     // ============== SETUP MATERIAL COLORS ==============
-    // 3 warna hantu: merah, hijau, ungu
+    // Warna hantu dibuat lebih gelap agar terlihat lebih seram di labirin.
     GLfloat bodyColors[3][3] = {
-        {0.85f, 0.05f, 0.05f}, // Type 0: Red
-        {0.3f, 0.8f, 0.3f},    // Type 1: Green
-        {0.55f, 0.0f, 0.8f},   // Type 2: Purple
+        {0.48f, 0.02f, 0.02f}, // Type 0: dark red
+        {0.08f, 0.34f, 0.12f}, // Type 1: dark green
+        {0.24f, 0.00f, 0.36f}, // Type 2: dark purple
     };
 
     // Get current ghost color index (modulo 3 untuk safety)
@@ -250,15 +250,15 @@ void drawGhost(bool frightened, float scale, int ghostIndex, float frightenTimer
         body_diff[2] = bodyColors[idx][2];
         body_diff[3] = 1;
 
-        // Ambient: 30% dari diffuse color
-        body_amb[0] = bodyColors[idx][0] * 0.3f;
-        body_amb[1] = bodyColors[idx][1] * 0.3f;
-        body_amb[2] = bodyColors[idx][2] * 0.3f;
+        // Ambient lebih gelap agar bentuknya terasa horror saat disorot.
+        body_amb[0] = bodyColors[idx][0] * 0.18f;
+        body_amb[1] = bodyColors[idx][1] * 0.18f;
+        body_amb[2] = bodyColors[idx][2] * 0.18f;
         body_amb[3] = 1;
     }
 
     // ============== SETUP MATERIAL PROPERTIES ==============
-    GLfloat body_spec[] = {1, 1, 1, 1}; // Specular: white (shiny)
+    GLfloat body_spec[] = {0.45f, 0.45f, 0.45f, 1}; // Specular redup
     GLfloat body_emi[] = {0, 0, 0, 1};  // Emission: no glow normally
 
     // Frightened mode: tambah blue emission glow
@@ -304,26 +304,28 @@ void drawGhost(bool frightened, float scale, int ghostIndex, float frightenTimer
     }
 
     // ============== DRAW EYES ==============
-    // Mata: 2 bola putih besar
-    GLfloat eye_diff[] = {1, 1, 1, 1};         // White diffuse
-    GLfloat eye_amb[] = {0.5f, 0.5f, 0.5f, 1}; // Gray ambient
-    GLfloat noEmi[] = {0, 0, 0, 1};            // No emission
+    // Mata merah menyala agar hantu terlihat lebih mengancam.
+    GLfloat eye_diff[] = {1.0f, 0.05f, 0.02f, 1};
+    GLfloat eye_amb[] = {0.35f, 0.0f, 0.0f, 1};
+    GLfloat eye_emi[] = {0.55f, 0.0f, 0.0f, 1};
+    GLfloat noEmi[] = {0, 0, 0, 1};
     glMaterialfv(GL_FRONT, GL_AMBIENT, eye_amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, eye_diff);
-    glMaterialfv(GL_FRONT, GL_EMISSION, noEmi);
-    glMaterialf(GL_FRONT, GL_SHININESS, 20); // Shininess = 20
+    glMaterialfv(GL_FRONT, GL_EMISSION, eye_emi);
+    glMaterialf(GL_FRONT, GL_SHININESS, 80);
 
     // Draw 2 eye white (radius=0.28, posisi x=-0.38 dan +0.38)
     for (int s = -1; s <= 1; s += 2)
     {
         glPushMatrix();
         glTranslatef(s * 0.38f, 1.55f, 0.88f); // Left/right eye position
-        glutSolidSphere(0.28f, 16, 16);        // Eye white sphere
+        glScalef(1.15f, 0.72f, 0.85f);
+        glutSolidSphere(0.28f, 16, 16);
         glPopMatrix();
     }
 
     // ============== DRAW PUPILS ==============
-    // Pupil: 2 bola hitam kecil di depan mata
+    // Pupil: 2 bola hitam kecil di depan mata merah
     GLfloat pupil_diff[] = {0, 0, 0, 1}; // Black diffuse
     GLfloat pupil_amb[] = {0, 0, 0, 1};  // Black ambient
     glMaterialfv(GL_FRONT, GL_AMBIENT, pupil_amb);
@@ -334,7 +336,61 @@ void drawGhost(bool frightened, float scale, int ghostIndex, float frightenTimer
     {
         glPushMatrix();
         glTranslatef(s * 0.38f, 1.55f, 1.14f); // Pupil position (di depan mata)
-        glutSolidSphere(0.13f, 12, 12);        // Pupil sphere
+        glScalef(0.65f, 1.35f, 0.65f);
+        glutSolidSphere(0.12f, 12, 12);
+        glPopMatrix();
+    }
+
+    // ============== DRAW ANGRY BROWS ==============
+    GLfloat brow_diff[] = {0.02f, 0.0f, 0.0f, 1};
+    GLfloat brow_amb[] = {0.01f, 0.0f, 0.0f, 1};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, brow_amb);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, brow_diff);
+    glMaterialfv(GL_FRONT, GL_EMISSION, noEmi);
+    for (int s = -1; s <= 1; s += 2)
+    {
+        glPushMatrix();
+        glTranslatef(s * 0.38f, 1.83f, 1.02f);
+        glRotatef(s * -22.0f, 0, 0, 1);
+        glScalef(0.38f, 0.06f, 0.06f);
+        glutSolidCube(1.0f);
+        glPopMatrix();
+    }
+
+    // ============== DRAW MOUTH & FANGS ==============
+    GLfloat mouth_diff[] = {0.0f, 0.0f, 0.0f, 1};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mouth_diff);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mouth_diff);
+    glPushMatrix();
+    glTranslatef(0.0f, 1.16f, 1.02f);
+    glScalef(0.55f, 0.18f, 0.08f);
+    glutSolidSphere(1.0f, 14, 8);
+    glPopMatrix();
+
+    GLfloat fang_diff[] = {0.95f, 0.92f, 0.82f, 1};
+    GLfloat fang_amb[] = {0.25f, 0.22f, 0.18f, 1};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, fang_amb);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, fang_diff);
+    for (int s = -1; s <= 1; s += 2)
+    {
+        glPushMatrix();
+        glTranslatef(s * 0.17f, 1.05f, 1.11f);
+        glRotatef(90, 1, 0, 0);
+        glutSolidCone(0.055f, 0.20f, 8, 4);
+        glPopMatrix();
+    }
+
+    // ============== DRAW HEAD SPIKES ==============
+    GLfloat spike_diff[] = {0.08f, 0.0f, 0.0f, 1};
+    GLfloat spike_amb[] = {0.02f, 0.0f, 0.0f, 1};
+    glMaterialfv(GL_FRONT, GL_AMBIENT, spike_amb);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, spike_diff);
+    for (int s = -1; s <= 1; s++)
+    {
+        glPushMatrix();
+        glTranslatef(s * 0.28f, 2.25f - fabsf((float)s) * 0.08f, 0.20f);
+        glRotatef(-90, 1, 0, 0);
+        glutSolidCone(0.12f, 0.34f, 8, 4);
         glPopMatrix();
     }
 
