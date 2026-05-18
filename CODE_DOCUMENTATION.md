@@ -10,7 +10,9 @@
 - MAP_ROWS = 25, MAP_COLS = 33 (ukuran grid labirin)
 - NUM_GHOSTS = 3 (jumlah hantu)
 - MAX_PARTICLES = 400 (max partikel effect)
-- POWER_DURATION = 300 (frame durasi power pellet ~5 detik)
+- POWER_DURATION = 420 (frame durasi power pellet ~7 detik)
+- STARTING_LIVES = 3 (nyawa awal pemain)
+- WIN_COIN_TARGET = 150 (jumlah pelet/koin yang dibutuhkan untuk menang)
 
 **Struktur Penting**:
 
@@ -133,13 +135,15 @@
 
 - Reset pemain ke posisi awal (pX=0, pZ=8)
 - Reset angle (pAngle=180)
-- Reset nyawa (lives=3), score, coins
-- Reset camera
+- Reset camera ke posisi awal
 
 #### initGame()
 
 - Initialize game baru
 - Reset map dan hantu
+- Hitung total item map (213: 209 koin + 4 power pellet)
+- Set target menang ke `WIN_COIN_TARGET` (150 item, dibatasi total item jika map lebih kecil)
+- Reset nyawa (`STARTING_LIVES` = 3), score, dan coins
 - Reset pemain dan UI
 - Set currentState = PLAYING
 
@@ -197,8 +201,8 @@
 
 #### getTotalCoins()
 
-- Count total koin biasa dalam maze
-- Loop seluruh grid, count cell == 2
+- Count total item aktif dalam maze
+- Loop seluruh grid, count cell == 2 atau cell == 3
 
 #### isFreeCell(row, col)
 
@@ -255,7 +259,7 @@
 **PLAYING state**:
 
 - **3 Hearts**: Life indicator (kiri atas)
-- **Coins**: "Koin: X/Y" (kanan atas, tengah)
+- **Coins**: "Koin: X/150" (kanan atas, tengah, target dari `coinTarget`)
 - **Score**: "Skor: Z" (kanan atas, bawah)
 - **Minimap**: 148x112 pixel, pojok kanan atas
   - Show maze layout dengan warna berbeda per cell type
@@ -268,6 +272,7 @@
 **GAME_OVER / WIN state**:
 
 - Tampilkan game over/victory message
+- WIN screen memakai `drawWinCelebration()` untuk overlay glow, starburst, confetti, dan panel kemenangan yang lebih meriah
 - Render high score
 - Instruksi untuk restart
 
@@ -298,7 +303,7 @@ PLAYING
   │
   └─ Check Win/Loss:
      ├─ Ketangkap hantu → GAME_OVER
-     ├─ Kumpulkan semua koin → WIN
+     ├─ Kumpulkan 150 pelet/koin → WIN
      └─ Else → tetap PLAYING
       ↓
 [Game Over / Victory Screen]
@@ -332,10 +337,11 @@ PLAYING
 - Koin biasa: +10 points
 - Power pellet: +50 points
 - Makan hantu (saat power): +200, +400, +800 (multiplier)
+- Menang: kumpulkan `WIN_COIN_TARGET` item (150 pelet/koin), meskipun total item map tetap 213
 
 ### Power Pellet
 
-- Durasi: 300 frames (~5 detik)
+- Durasi: 420 frames (~7 detik)
 - Effect: Hantu jadi takut dan berwarna biru
 - Pemain bisa makan hantu dan dapat combo multiplier
 - Light effect: ungu/magenta pulsing
@@ -346,7 +352,7 @@ PLAYING
 - Type 1 (Blue): Smart chase ke posisi depan pemain
 - Type 2 (Pink): Standard chase
 - Saat power: lari dari pemain dengan speed 60%
-- Nightmare Chase: aktif saat sisa koin sedikit; hantu lebih cepat dan danger zone lebih besar
+- Nightmare Chase: aktif saat sisa target menang sedikit; hantu lebih cepat dan danger zone lebih besar
 
 ### Dash dan Jumpscare
 
@@ -376,7 +382,8 @@ PLAYING
 
 1. Edit `POWER_DURATION` di game_common.h (kurangi durasi power)
 2. Edit `speedBase` di `initGame()` pada player.cpp
-3. Edit ghost respawn timer (lebih cepat respawn)
+3. Edit `WIN_COIN_TARGET` di game_common.h (naikkan target menang)
+4. Edit ghost respawn timer (lebih cepat respawn)
 
 ### Untuk menambah karakter hantu:
 

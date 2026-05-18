@@ -48,6 +48,59 @@ void drawHeart(float cx, float cy, float sz)
     glEnd();
 }
 
+void drawWinCelebration(int w, int h, float t)
+{
+    float pulse = 0.5f + 0.5f * sinf(t * 3.8f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBegin(GL_QUADS);
+    glColor4f(0.05f, 0.03f, 0.12f, 0.70f);
+    glVertex2f(0, 0);
+    glVertex2f(w, 0);
+    glColor4f(0.22f, 0.05f, 0.26f, 0.60f);
+    glVertex2f(w, h);
+    glVertex2f(0, h);
+    glEnd();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glLineWidth(2.0f);
+    glBegin(GL_LINES);
+    for (int i = 0; i < 28; i++)
+    {
+        float ang = (float)i * (2.0f * PI / 28.0f) + t * 0.55f;
+        float len1 = 70.0f + 24.0f * sinf(t * 2.0f + i);
+        float len2 = (float)((w > h ? w : h) / 2) + 90.0f;
+        float r = 0.70f + 0.30f * sinf(t * 2.0f + i * 0.7f);
+        float g = 0.55f + 0.35f * sinf(t * 2.4f + i * 0.4f);
+        float b = 0.85f + 0.15f * sinf(t * 2.8f + i * 0.5f);
+        glColor4f(r, g, b, 0.18f + 0.14f * pulse);
+        glVertex2f(w * 0.5f + cosf(ang) * len1, h * 0.5f + sinf(ang) * len1);
+        glVertex2f(w * 0.5f + cosf(ang) * len2, h * 0.5f + sinf(ang) * len2);
+    }
+    glEnd();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    for (int i = 0; i < 42; i++)
+    {
+        float x = fmodf(i * 83.0f + t * (35.0f + (i % 5) * 10.0f), (float)w);
+        float y = fmodf(i * 47.0f + t * (55.0f + (i % 7) * 8.0f), (float)h);
+        float sz = 4.0f + (float)(i % 4) * 2.0f;
+        glColor4f(0.35f + 0.65f * ((i % 3) == 0),
+                  0.45f + 0.50f * ((i % 3) == 1),
+                  0.55f + 0.45f * ((i % 3) == 2),
+                  0.68f);
+        glBegin(GL_QUADS);
+        glVertex2f(x - sz, y - sz);
+        glVertex2f(x + sz, y - sz * 0.4f);
+        glVertex2f(x + sz * 0.4f, y + sz);
+        glVertex2f(x - sz * 0.6f, y + sz * 0.5f);
+        glEnd();
+    }
+
+    glDisable(GL_BLEND);
+}
+
 void drawMinimap(int w, int h)
 {
     float mmX = w - 160.0f;
@@ -307,14 +360,14 @@ void drawUI(int w, int h)
     }
     else if (currentState == PLAYING)
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < STARTING_LIVES; i++)
         {
             glColor3f(i < lives ? 1.0f : 0.25f, i < lives ? 0.1f : 0.08f, 0.1f);
             drawHeart(28.f + i * 36.f, 28.f, 20.f);
         }
         glColor3f(0.8f, 0.5f, 1.0f);
         glColor3f(0.4f, 0.9f, 1.0f);
-        sprintf(buf, "Koin: %d/%d", coins, totalCoins);
+        sprintf(buf, "Koin: %d/%d", coins, coinTarget);
         renderStr(w - 150, 155, GLUT_BITMAP_HELVETICA_12, buf);
         glColor3f(1.f, 0.85f, 0.f);
         sprintf(buf, "Skor: %d", score);
@@ -413,7 +466,7 @@ void drawUI(int w, int h)
         glColor3f(0.9f + 0.1f * pulse, 0.05f, 0.05f);
         renderStr(w / 2 - 75, h / 2 - 65, GLUT_BITMAP_TIMES_ROMAN_24, "GAME OVER");
         glColor3f(0.8f, 0.8f, 0.8f);
-        sprintf(buf, "Koin: %d / %d", coins, totalCoins);
+        sprintf(buf, "Koin: %d / %d", coins, coinTarget);
         renderStr(w / 2 - 80, h / 2 - 20, GLUT_BITMAP_HELVETICA_18, buf);
         sprintf(buf, "Skor: %d", score);
         glColor3f(1, 0.85f, 0);
@@ -428,25 +481,30 @@ void drawUI(int w, int h)
     }
     else if (currentState == WIN)
     {
-        drawFilledRect(w / 2 - 210, h / 2 - 120, w / 2 + 210, h / 2 + 120, 0, 0, 0, 0.88f);
-        float r2 = 0.5f + 0.5f * sinf(t * 3);
-        float g2 = 0.5f + 0.5f * sinf(t * 3 + 2);
-        float b2 = 0.5f + 0.5f * sinf(t * 3 + 4);
+        drawWinCelebration(w, h, t);
+        float pulse = 0.5f + 0.5f * sinf(t * 5.0f);
+        drawFilledRect(w / 2 - 245, h / 2 - 135, w / 2 + 245, h / 2 + 145, 0.02f, 0.02f, 0.05f, 0.88f);
+        drawFilledRect(w / 2 - 235, h / 2 - 125, w / 2 + 235, h / 2 + 135, 0.25f, 0.08f, 0.32f, 0.22f + 0.12f * pulse);
+        float r2 = 0.75f + 0.25f * sinf(t * 3);
+        float g2 = 0.55f + 0.45f * sinf(t * 3 + 2);
+        float b2 = 0.85f + 0.15f * sinf(t * 3 + 4);
         glColor3f(r2, g2, b2);
-        renderStr(w / 2 - 60, h / 2 - 65, GLUT_BITMAP_TIMES_ROMAN_24, "YOU WIN!");
-        glColor3f(0.8f, 0.8f, 0.8f);
-        sprintf(buf, "Semua koin terkumpul!");
-        renderStr(w / 2 - 80, h / 2 - 20, GLUT_BITMAP_HELVETICA_18, buf);
+        renderStr(w / 2 - 60, h / 2 - 72, GLUT_BITMAP_TIMES_ROMAN_24, "YOU WIN");
+        glColor3f(1.0f, 0.92f, 0.35f);
+        renderStr(w / 2 - 128, h / 2 - 36, GLUT_BITMAP_HELVETICA_18, "Kucing berhasil menaklukkan labirin!");
+        glColor3f(0.8f, 0.9f, 1.0f);
+        sprintf(buf, "Target koin tercapai!");
+        renderStr(w / 2 - 85, h / 2 - 4, GLUT_BITMAP_HELVETICA_18, buf);
         sprintf(buf, "Skor: %d", score);
         glColor3f(1, 0.85f, 0);
-        renderStr(w / 2 - 45, h / 2 + 10, GLUT_BITMAP_HELVETICA_18, buf);
+        renderStr(w / 2 - 45, h / 2 + 30, GLUT_BITMAP_HELVETICA_18, buf);
         if (score >= highScore)
         {
             glColor3f(1, 0.9f, 0.2f);
-            renderStr(w / 2 - 85, h / 2 + 38, GLUT_BITMAP_HELVETICA_12, "*** NEW HIGH SCORE! ***");
+            renderStr(w / 2 - 85, h / 2 + 58, GLUT_BITMAP_HELVETICA_12, "*** NEW HIGH SCORE! ***");
         }
         glColor3f(0.7f, 0.7f, 0.7f);
-        renderStr(w / 2 - 105, h / 2 + 70, GLUT_BITMAP_HELVETICA_18, "Tekan  R  untuk Main Lagi");
+        renderStr(w / 2 - 105, h / 2 + 96, GLUT_BITMAP_HELVETICA_18, "Tekan  R  untuk Main Lagi");
     }
     if (flashA > 0.01f)
     {
@@ -620,10 +678,12 @@ void updatePhysics(int value)
             triggerFlash(0.5f, 0, 0.8f, 0.5f);
             feedbackBeep("power");
         }
-        int remainingCoins = totalCoins - coins;
-        int nightmareThreshold = totalCoins / 6;
-        if (nightmareThreshold < 18)
-            nightmareThreshold = 18;
+        int remainingCoins = coinTarget - coins;
+        if (remainingCoins < 0)
+            remainingCoins = 0;
+        int nightmareThreshold = coinTarget / 6;
+        if (nightmareThreshold < 12)
+            nightmareThreshold = 12;
         bool wasNightmare = nightmareActive;
         nightmareActive = remainingCoins > 0 && remainingCoins <= nightmareThreshold;
         if (nightmareActive && !wasNightmare)
@@ -740,7 +800,7 @@ void updatePhysics(int value)
         shakeMag = shakeMag * 0.80f + want * 0.20f;
         if (shakeMag < 0.001f)
             shakeMag = 0.f;
-        if (coins >= totalCoins)
+        if (coins >= coinTarget)
         {
             if (score > highScore)
                 highScore = score;

@@ -170,7 +170,7 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 - Type 0 (Red): Simple chase
 - Type 1 (Blue): Smart chase + predict player position
 - Type 2 (Pink): Standard chase + wandering stuck detection
-- **Nightmare Chase**: aktif saat sisa koin sedikit; hantu lebih cepat dan suasana makin merah/mencekam
+- **Nightmare Chase**: aktif saat sisa target menang sedikit; hantu lebih cepat dan suasana makin merah/mencekam
 
 **Lokasi:** `ghost.cpp` - `updateGhost()`
 
@@ -194,11 +194,18 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 ### 6. **Dash, Nightmare, dan Jumpscare**
 
 - `SPACE` memberi dash cepat sebentar dengan cooldown.
-- Nightmare Chase aktif otomatis ketika koin hampir habis.
+- Nightmare Chase aktif otomatis ketika sisa target menang hampir habis.
 - Jika hantu sangat dekat, muncul jumpscare berat, flash merah, dan camera shake.
 - Semua efek suara dimatikan; feedback dibuat visual saja.
 
 **Lokasi:** `ui.cpp` - `updatePhysics()`, `drawHeavyJumpscare()`
+
+### 7. **Victory Celebration**
+
+- Layar menang memakai glow overlay, starburst, confetti, dan panel kemenangan yang lebih meriah.
+- Muncul saat pemain mengumpulkan 150 item dari total 213 item map.
+
+**Lokasi:** `ui.cpp` - `drawWinCelebration()`, `drawUI()`
 
 ---
 
@@ -210,8 +217,11 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 | Light sources     | 3 (ambient, player, ghost)   |
 | Max active ghosts | 3                            |
 | Max particles     | 400                          |
-| Power duration    | 300 frames (~5 sec @ 60 FPS) |
-| Level system      | Tidak ada; menang berarti game selesai |
+| Total item map    | 213 (209 koin + 4 power pellet) |
+| Target menang     | 150 item terkumpul              |
+| Nyawa awal        | 3                            |
+| Power duration    | 420 frames (~7 sec @ 60 FPS) |
+| Level system      | Tidak ada; menang saat target item tercapai |
 | Target FPS        | 60                           |
 | Window size       | 1024×720 pixels              |
 
@@ -223,7 +233,8 @@ g++ -o kucing_gila main.cpp effects.cpp ghost.cpp map.cpp player.cpp ui.cpp \
 
 ```cpp
 // game_common.h
-#define POWER_DURATION 200  // Kurangi dari 300 (lebih cepat power habis)
+#define POWER_DURATION 240  // Kurangi dari 420 (lebih cepat power habis)
+#define WIN_COIN_TARGET 180 // Naikkan dari 150 agar butuh lebih banyak item untuk menang
 
 // ghost.cpp - di updateGhost()
 g.speed *= 1.3f;  // Hantu lebih cepat

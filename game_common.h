@@ -18,7 +18,9 @@
 #define PI 3.14159265f     // Nilai PI untuk perhitungan sudut (radian)
 #define NUM_GHOSTS 3       // Jumlah hantu yang mengejar pemain (3 hantu)
 #define MAX_PARTICLES 400  // Maksimal jumlah partikel visual effect (ledakan, dll)
-#define POWER_DURATION 300 // Durasi power pellet dalam frame (300 frame ≈ 5 detik)
+#define POWER_DURATION 420  // Durasi power pellet dalam frame (420 frame = sekitar 7 detik)
+#define STARTING_LIVES 3    // Nyawa awal pemain
+#define WIN_COIN_TARGET 150 // Jumlah pelet/koin yang dibutuhkan untuk menang
 
 // ============== ENUM STATUS GAME ==============
 // Enum untuk tracking state game (mulai, bermain, game over, menang)
@@ -73,9 +75,10 @@ extern float pX, pZ;        // Posisi pemain (X=kolom, Z=baris)
 extern float pAngle;        // Arah hadap pemain dalam derajat (0-360)
 extern float mouthAnim;     // Animasi mulut kucing/player (buka/tutup)
 extern float mouthDir;      // Arah animasi mulut (1 atau -1)
-extern int lives;           // Jumlah nyawa pemain (max 3)
+extern int lives;           // Jumlah nyawa pemain
 extern int coins;           // Jumlah koin yang sudah dikumpulkan
 extern int totalCoins;      // Total koin dalam map
+extern int coinTarget;      // Target koin yang harus dikumpulkan untuk menang
 extern int score;           // Score pemain saat ini
 extern int highScore;       // High score tertinggi
 extern int scoreMultiplier; // Multiplier score saat makan hantu (x2, x4, dll)

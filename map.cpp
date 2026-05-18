@@ -298,8 +298,12 @@ static void drawCeiling()
 void resetMap()
 {
     for (int i = 0; i < MAP_ROWS; i++)
+    {
         for (int j = 0; j < MAP_COLS; j++)
+        {
             maze[i][j] = initial_maze[i][j];
+        }
+    }
 }
 
 int getTotalCoins()
@@ -309,7 +313,7 @@ int getTotalCoins()
     {
         for (int j = 0; j < MAP_COLS; j++)
         {
-            if (initial_maze[i][j] == 2 || initial_maze[i][j] == 3)
+            if (maze[i][j] == 2 || maze[i][j] == 3)
                 n++;
         }
     }

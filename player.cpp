@@ -15,6 +15,7 @@ float mouthDir = 1.f;
 int lives = 3;
 int coins = 0;
 int totalCoins = 0;
+int coinTarget = 0;
 int score = 0;
 int highScore = 0;
 int scoreMultiplier = 1;
@@ -384,8 +385,11 @@ void initGame()
 {
     resetMap();
     totalCoins = getTotalCoins();
+    coinTarget = WIN_COIN_TARGET;
+    if (coinTarget > totalCoins)
+        coinTarget = totalCoins;
     coins = 0;
-    lives = 3;
+    lives = STARTING_LIVES;
     score = 0;
     scoreMultiplier = 1;
     multTimer = 0;
@@ -403,10 +407,10 @@ void initGame()
     heavyJumpscareTimer = 0;
     heavyJumpscareCooldown = 0;
     flashA = 0;
-    float speedBase = 0.042f;
+    float speedBase = 0.034f;
     for (int i = 0; i < NUM_GHOSTS; i++)
     {
-        ghosts[i].speed = speedBase + i * 0.010f;
+        ghosts[i].speed = speedBase + i * 0.008f;
         ghosts[i].stuckTimer = 0;
         ghosts[i].wanderAngle = (float)(rand() % 360);
         ghosts[i].active = false;
