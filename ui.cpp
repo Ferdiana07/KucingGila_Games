@@ -28,6 +28,200 @@ void drawFilledRect(float x1, float y1, float x2, float y2, float r, float g, fl
     glDisable(GL_BLEND);
 }
 
+static void drawLineRect(float x1, float y1, float x2, float y2, float r, float g, float b, float a, float lineWidth)
+{
+    glColor4f(r, g, b, a);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glLineWidth(lineWidth);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x1, y1);
+    glVertex2f(x2, y1);
+    glVertex2f(x2, y2);
+    glVertex2f(x1, y2);
+    glEnd();
+    glDisable(GL_BLEND);
+    glLineWidth(1.0f);
+}
+
+static void drawSoftCircle(float cx, float cy, float radius, float r, float g, float b, float a)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBegin(GL_TRIANGLE_FAN);
+    glColor4f(r, g, b, a);
+    glVertex2f(cx, cy);
+    glColor4f(r, g, b, 0.0f);
+    for (int i = 0; i <= 36; i++)
+    {
+        float ang = (float)i * 2.0f * PI / 36.0f;
+        glVertex2f(cx + cosf(ang) * radius, cy + sinf(ang) * radius);
+    }
+    glEnd();
+    glDisable(GL_BLEND);
+}
+
+static void drawSolidCircle(float cx, float cy, float radius, float r, float g, float b, float a)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(r, g, b, a);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(cx, cy);
+    for (int i = 0; i <= 32; i++)
+    {
+        float ang = (float)i * 2.0f * PI / 32.0f;
+        glVertex2f(cx + cosf(ang) * radius, cy + sinf(ang) * radius);
+    }
+    glEnd();
+    glDisable(GL_BLEND);
+}
+
+static void drawTitleText(float x, float y, const char *text, float pulse)
+{
+    glColor3f(0.10f, 0.01f, 0.10f);
+    renderStr(x + 4, y + 5, GLUT_BITMAP_TIMES_ROMAN_24, text);
+    glColor3f(0.0f, 0.85f, 1.0f);
+    renderStr(x - 2, y - 1, GLUT_BITMAP_TIMES_ROMAN_24, text);
+    glColor3f(1.0f, 0.82f + 0.18f * pulse, 0.14f);
+    renderStr(x, y, GLUT_BITMAP_TIMES_ROMAN_24, text);
+}
+
+static void drawKeycap(float x, float y, float w, const char *label, float r, float g, float b)
+{
+    drawFilledRect(x, y, x + w, y + 24, 0.02f, 0.03f, 0.07f, 0.86f);
+    drawLineRect(x, y, x + w, y + 24, r, g, b, 0.85f, 2.0f);
+    glColor3f(0.92f, 0.96f, 1.0f);
+    renderStr(x + 8, y + 16, GLUT_BITMAP_HELVETICA_12, label);
+}
+
+static void drawMenuBullet(float x, float y, float r, float g, float b, const char *text)
+{
+    drawSolidCircle(x, y - 4, 4.5f, r, g, b, 0.95f);
+    glColor3f(0.88f, 0.92f, 0.96f);
+    renderStr(x + 14, y, GLUT_BITMAP_HELVETICA_12, text);
+}
+
+static void drawMenuCard(float x1, float y1, float x2, float y2, const char *title, float r, float g, float b)
+{
+    drawFilledRect(x1 + 6, y1 + 8, x2 + 6, y2 + 8, 0.0f, 0.0f, 0.0f, 0.34f);
+    drawFilledRect(x1, y1, x2, y2, 0.025f, 0.035f, 0.07f, 0.84f);
+    drawFilledRect(x1, y1, x2, y1 + 32, r * 0.20f, g * 0.20f, b * 0.24f, 0.55f);
+    drawLineRect(x1, y1, x2, y2, r, g, b, 0.62f, 2.0f);
+    glColor3f(r, g, b);
+    renderStr(x1 + 18, y1 + 22, GLUT_BITMAP_HELVETICA_18, title);
+}
+
+static void drawStartCover(int w, int h, float t, char *buf)
+{
+    float pulse = 0.5f + 0.5f * sinf(t * 3.0f);
+    float panelW = (float)w - 90.0f;
+    if (panelW > 940.0f)
+        panelW = 940.0f;
+    if (panelW < 700.0f)
+        panelW = 700.0f;
+    float panelH = 520.0f;
+    float panelX = ((float)w - panelW) * 0.5f;
+    float panelY = ((float)h - panelH) * 0.5f + 8.0f;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBegin(GL_QUADS);
+    glColor4f(0.01f, 0.02f, 0.05f, 0.92f);
+    glVertex2f(0, 0);
+    glVertex2f(w, 0);
+    glColor4f(0.13f, 0.02f, 0.11f, 0.90f);
+    glVertex2f(w, h);
+    glVertex2f(0, h);
+    glEnd();
+
+    glLineWidth(2.0f);
+    glBegin(GL_LINES);
+    for (int i = 0; i < 13; i++)
+    {
+        float x = fmodf(i * 113.0f + t * 18.0f, (float)w);
+        glColor4f(0.0f, 0.78f, 1.0f, 0.08f);
+        glVertex2f(x, 0);
+        glVertex2f(x - 90.0f, h);
+    }
+    for (int j = 0; j < 8; j++)
+    {
+        float y = fmodf(j * 91.0f + t * 12.0f, (float)h);
+        glColor4f(1.0f, 0.16f, 0.72f, 0.07f);
+        glVertex2f(0, y);
+        glVertex2f(w, y + 36.0f);
+    }
+    glEnd();
+    glDisable(GL_BLEND);
+    glLineWidth(1.0f);
+
+    for (int i = 0; i < 18; i++)
+    {
+        float x = fmodf(32.0f + i * 71.0f + t * (12.0f + (i % 4) * 7.0f), (float)w);
+        float y = fmodf(58.0f + i * 43.0f + t * (9.0f + (i % 5) * 4.0f), (float)h);
+        float s = 3.0f + (float)(i % 3);
+        if (i % 3 == 0)
+            drawSolidCircle(x, y, s + 2.0f * pulse, 1.0f, 0.78f, 0.10f, 0.45f);
+        else if (i % 3 == 1)
+            drawSolidCircle(x, y, s, 0.15f, 0.88f, 1.0f, 0.38f);
+        else
+            drawSolidCircle(x, y, s, 0.95f, 0.18f, 0.88f, 0.34f);
+    }
+
+    drawSoftCircle(panelX + panelW * 0.18f, panelY + 110.0f, 170.0f, 0.0f, 0.78f, 1.0f, 0.15f);
+    drawSoftCircle(panelX + panelW * 0.83f, panelY + 395.0f, 190.0f, 1.0f, 0.12f, 0.75f, 0.13f);
+    drawFilledRect(panelX + 8, panelY + 12, panelX + panelW + 8, panelY + panelH + 12, 0.0f, 0.0f, 0.0f, 0.30f);
+    drawFilledRect(panelX, panelY, panelX + panelW, panelY + panelH, 0.02f, 0.025f, 0.055f, 0.86f);
+    drawLineRect(panelX, panelY, panelX + panelW, panelY + panelH, 0.0f, 0.84f, 1.0f, 0.45f + 0.22f * pulse, 3.0f);
+    drawLineRect(panelX + 10, panelY + 10, panelX + panelW - 10, panelY + panelH - 10, 1.0f, 0.18f, 0.78f, 0.28f, 1.0f);
+
+    glColor3f(0.70f, 0.88f, 1.0f);
+    renderStr(panelX + 72.0f, panelY + 58.0f, GLUT_BITMAP_HELVETICA_12, "MAZE HORROR ARCADE");
+    drawTitleText(panelX + 70.0f, panelY + 112.0f, "Crazy Cat 3D", pulse);
+    glColor3f(0.74f, 0.80f, 0.88f);
+    renderStr(panelX + 74.0f, panelY + 154.0f, GLUT_BITMAP_HELVETICA_12, "Kumpulkan koin, manfaatkan power pellet, dan kabur dari 3 hantu.");
+
+    if (highScore > 0)
+    {
+        sprintf(buf, "HIGH SCORE  %d", highScore);
+        drawFilledRect(panelX + panelW - 196.0f, panelY + 44.0f, panelX + panelW - 40.0f, panelY + 76.0f, 1.0f, 0.68f, 0.04f, 0.12f);
+        drawLineRect(panelX + panelW - 196.0f, panelY + 44.0f, panelX + panelW - 40.0f, panelY + 76.0f, 1.0f, 0.78f, 0.14f, 0.68f, 2.0f);
+        glColor3f(1.0f, 0.88f, 0.24f);
+        renderStr(panelX + panelW - 178.0f, panelY + 65.0f, GLUT_BITMAP_HELVETICA_12, buf);
+    }
+
+    float leftX = panelX + 46.0f;
+    float rightX = panelX + panelW * 0.52f;
+    float cardY = panelY + 210.0f;
+    float cardW = panelW * 0.42f;
+    drawMenuCard(leftX, cardY, leftX + cardW, cardY + 176.0f, "KONTROL GAME", 0.08f, 0.82f, 1.0f);
+    drawKeycap(leftX + 22.0f, cardY + 52.0f, 46.0f, "W/S", 0.08f, 0.82f, 1.0f);
+    glColor3f(0.86f, 0.90f, 0.95f);
+    renderStr(leftX + 84.0f, cardY + 69.0f, GLUT_BITMAP_HELVETICA_12, "Maju dan mundur");
+    drawKeycap(leftX + 22.0f, cardY + 84.0f, 46.0f, "A/D", 0.08f, 0.82f, 1.0f);
+    renderStr(leftX + 84.0f, cardY + 101.0f, GLUT_BITMAP_HELVETICA_12, "Putar kiri dan kanan");
+    drawKeycap(leftX + 22.0f, cardY + 116.0f, 70.0f, "MOUSE", 0.08f, 0.82f, 1.0f);
+    renderStr(leftX + 108.0f, cardY + 133.0f, GLUT_BITMAP_HELVETICA_12, "Lihat sekitar");
+    drawKeycap(leftX + 22.0f, cardY + 148.0f, 30.0f, "C", 0.08f, 0.82f, 1.0f);
+    renderStr(leftX + 68.0f, cardY + 165.0f, GLUT_BITMAP_HELVETICA_12, "Ganti kamera");
+
+    drawMenuCard(rightX, cardY, rightX + cardW, cardY + 176.0f, "PERATURAN", 1.0f, 0.26f, 0.75f);
+    drawMenuBullet(rightX + 24.0f, cardY + 60.0f, 1.0f, 0.78f, 0.12f, "Kumpulkan 150 koin untuk menang.");
+    drawMenuBullet(rightX + 24.0f, cardY + 88.0f, 0.16f, 0.86f, 1.0f, "Jangan sampai tertangkap hantu.");
+    drawMenuBullet(rightX + 24.0f, cardY + 116.0f, 0.95f, 0.20f, 0.95f, "Koin ungu membuat hantu takut.");
+    drawMenuBullet(rightX + 24.0f, cardY + 144.0f, 1.0f, 0.42f, 0.18f, "Makan hantu saat power untuk combo.");
+
+    float startX = panelX + panelW * 0.5f - 168.0f;
+    float startY = panelY + panelH - 78.0f;
+    drawSoftCircle(panelX + panelW * 0.5f, startY + 20.0f, 116.0f + 12.0f * pulse, 1.0f, 0.82f, 0.10f, 0.20f);
+    drawFilledRect(startX, startY, startX + 336.0f, startY + 44.0f, 1.0f, 0.70f, 0.04f, 0.18f + 0.10f * pulse);
+    drawLineRect(startX, startY, startX + 336.0f, startY + 44.0f, 1.0f, 0.82f, 0.15f, 0.82f, 2.0f);
+    glColor3f(1.0f, 0.92f, 0.38f);
+    renderStr(startX + 70.0f, startY + 29.0f, GLUT_BITMAP_HELVETICA_18, "TEKAN ENTER UNTUK MULAI");
+    glColor3f(0.56f, 0.64f, 0.72f);
+    renderStr(panelX + panelW * 0.5f - 128.0f, panelY + panelH - 24.0f, GLUT_BITMAP_HELVETICA_12, "Arrow key juga bisa langsung memulai game");
+}
+
 void drawHeart(float cx, float cy, float sz)
 {
     glBegin(GL_TRIANGLE_FAN);
@@ -332,31 +526,7 @@ void drawUI(int w, int h)
     float t = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     if (currentState == START)
     {
-        drawFilledRect(w / 2 - 240, h / 2 - 140, w / 2 + 240, h / 2 + 200, 0, 0, 0, 0.88f);
-        float c = 0.5f + 0.5f * sinf(t * 3);
-        glColor3f(1.0f, 0.7f + 0.3f * c, 0.0f);
-        renderStr(w / 2 - 85, h / 2 - 100, GLUT_BITMAP_TIMES_ROMAN_24, "KUCING GILA");
-        glColor3f(0.6f, 0.6f + 0.3f * c, 1.0f);
-        renderStr(w / 2 - 70, h / 2 - 70, GLUT_BITMAP_HELVETICA_12, "-- UPGRADED EDITION --");
-        glColor3f(0.9f, 0.9f, 0.9f);
-        renderStr(w / 2 - 130, h / 2 - 35, GLUT_BITMAP_HELVETICA_18, "Tekan ENTER untuk Memulai");
-        glColor3f(0.75f, 0.75f, 0.75f);
-        renderStr(w / 2 - 160, h / 2 + 10, GLUT_BITMAP_HELVETICA_12, "W/S = Maju/Mundur   A/D = Putar kiri/kanan");
-        renderStr(w / 2 - 160, h / 2 + 30, GLUT_BITMAP_HELVETICA_12, "Mouse = Lihat kiri/kanan");
-        renderStr(w / 2 - 160, h / 2 + 50, GLUT_BITMAP_HELVETICA_12, "C = Ganti kamera First Person / Third Person");
-        renderStr(w / 2 - 160, h / 2 + 75, GLUT_BITMAP_HELVETICA_12, "Kumpulkan semua koin. Jangan ditangkap hantu!");
-        glColor3f(0.8f, 0.2f, 0.9f);
-        renderStr(w / 2 - 160, h / 2 + 105, GLUT_BITMAP_HELVETICA_12, "Koin UNGU = Power Pellet! Hantu jadi takut!");
-        glColor3f(0.8f, 0.6f, 0.1f);
-        renderStr(w / 2 - 160, h / 2 + 130, GLUT_BITMAP_HELVETICA_12, "Tangkap hantu saat power untuk SKOR COMBO!");
-        if (highScore > 0)
-        {
-            glColor3f(1, 0.9f, 0);
-            sprintf(buf, "High Score: %d", highScore);
-            renderStr(w / 2 - 60, h / 2 + 150, GLUT_BITMAP_HELVETICA_18, buf);
-        }
-        glColor3f(0.6f, 0.1f, 0.1f);
-        renderStr(w / 2 - 130, h / 2 + 175, GLUT_BITMAP_HELVETICA_12, "3 hantu akan mengejarmu di kegelapan...");
+        drawStartCover(w, h, t, buf);
     }
     else if (currentState == PLAYING)
     {
