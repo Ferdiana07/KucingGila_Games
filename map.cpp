@@ -2,13 +2,7 @@
 #include "effects.h"
 #include <math.h>
 
-// ============== MAP DATA ==============
-// initial_maze: Template labirin tetap (tidak berubah saat game)
-// Grid 25x33 dengan nilai:
-//   0 = kosong (path, bisa dilewati)
-//   1 = tembok (wall, obstacle)
-//   2 = koin biasa (normal coin, +10 score)
-//   3 = power pellet (ungu, +50 score + power mode)
+// 0 = jalan, 1 = tembok, 2 = koin, 3 = power pellet
 int initial_maze[MAP_ROWS][MAP_COLS] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 2, 0, 2, 2, 2, 2, 0, 2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 0, 2, 2, 2, 0, 2, 2, 2, 0, 2, 2, 2, 2, 0, 1},
@@ -43,8 +37,6 @@ const float offsetZ = (MAP_ROWS - 1) / 2.0f;
 static void setWallMaterial(int row, int col)
 {
     GLfloat amb[4], diff[4], spec[4], emi[4] = {0, 0, 0, 1};
-    // Tembok memakai glow/emission pelan agar texture bata tetap terlihat di labirin gelap.
-    // Nilainya memakai posisi cell supaya denyut tiap tembok tidak seragam.
     float pulse = 0.5f + 0.5f * sinf(glutGet(GLUT_ELAPSED_TIME) / 850.0f + row * 0.27f + col * 0.33f);
 
     amb[0] = 0.015f;
@@ -104,7 +96,6 @@ static void drawFloorTextureOverlay(float x, float z, int row, int col)
 
     if ((row * 3 + col * 5) % 11 == 0)
     {
-        // Jejak kaki kecil supaya tema kucing terasa lebih playful.
         glColor4f(0.70f, 0.95f, 1.0f, 0.34f);
         drawFloorDisc(x, z, 0.085f, y + 0.004f);
         drawFloorDisc(x - 0.09f, z + 0.10f, 0.035f, y + 0.004f);
@@ -113,7 +104,6 @@ static void drawFloorTextureOverlay(float x, float z, int row, int col)
     }
     else if ((row * 7 + col * 2) % 13 == 0)
     {
-        // Fishbone sederhana dari garis, tanpa perlu asset gambar.
         glColor4f(0.65f, 0.90f, 1.0f, 0.32f);
         glBegin(GL_LINES);
         glVertex3f(x - 0.18f, y + 0.004f, z);
@@ -227,7 +217,6 @@ static void drawWallTextureOverlay(float x, float z, float wallH, int row, int c
 
     if ((row * 7 + col * 11) % 5 == 0)
     {
-        // Retakan glow cyan dikembalikan agar tembok tidak terlihat polos/hitam.
         glColor4f(0.2f + 0.35f * pulse, 0.75f * pulse, 1.0f * pulse, 0.45f);
         glBegin(GL_LINE_STRIP);
         glVertex3f(x - 0.30f, wallH * 0.82f, z - edge - 0.002f);
@@ -465,17 +454,6 @@ void drawMap()
             }
             else if (maze[i][j] == 2)
             {
-                // ================= COIN / KOIN BIASA (nilai maze == 2) =================
-                // Letak pembuatan coin/pellet ada di drawMap() pada kondisi:
-                //   - maze[i][j] == 2  -> coin biasa
-                //   - maze[i][j] == 3  -> power pellet
-                //
-                // Kenapa bentuknya seperti ikan?
-                // Model coin dibuat bukan dari sprite/mesh khusus, tetapi gabungan primitive:
-                //   1) glTranslatef(..., fishY, ...) + glRotatef(fishRot, ...) -> animasi seperti berenang
-                //   2) glutSolidSphere(...)                               -> badan/“tubuh” ikan
-                //   3) glutSolidCone(...) yang di-rotate 90 derajat      -> sirip/ekor
-                // Jadi "ikan" terlihat karena ada badan sphere + ekor (cone) + rotasi/gelombang (sinus).
                 GLfloat ca[] = {0.1f, 0.4f, 0.5f, 1};
                 GLfloat cd[] = {0.4f, 0.8f, 1.0f, 1};
                 GLfloat cs[] = {1, 1, 1, 1};
@@ -505,12 +483,6 @@ void drawMap()
             }
             else if (maze[i][j] == 3)
             {
-                // ================= POWER PELLET (nilai maze == 3) =================
-                // Pellet dibuat di drawMap() pada kondisi maze[i][j] == 3.
-                // Bentuknya juga "berasa" organik karena ada animasi sinus:
-                //   - ppY dipulskan (float ppY = 0.38 + ... sinf(...))
-                //   - seluruh pellet diputar (glRotatef(..., 0,1,0))
-                // Walau komponennya tidak pakai cone seperti coin, animasi ini membuatnya terlihat hidup.
                 float pulse2 = 0.7f + 0.3f * sinf(t * 6.0f + x + z);
                 GLfloat ppa[] = {0.3f, 0.0f, 0.3f, 1};
                 GLfloat ppd[] = {0.8f, 0.0f, 0.8f, 1};

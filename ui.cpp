@@ -77,14 +77,22 @@ static void drawSolidCircle(float cx, float cy, float radius, float r, float g, 
     glDisable(GL_BLEND);
 }
 
-static void drawTitleText(float x, float y, const char *text, float pulse)
+static void drawCenteredStrokeText(float cx, float y, const char *text, float scale, float r, float g, float b, float a)
 {
-    glColor3f(0.10f, 0.01f, 0.10f);
-    renderStr(x + 4, y + 5, GLUT_BITMAP_TIMES_ROMAN_24, text);
-    glColor3f(0.0f, 0.85f, 1.0f);
-    renderStr(x - 2, y - 1, GLUT_BITMAP_TIMES_ROMAN_24, text);
-    glColor3f(1.0f, 0.82f + 0.18f * pulse, 0.14f);
-    renderStr(x, y, GLUT_BITMAP_TIMES_ROMAN_24, text);
+    float width = 0.0f;
+    for (const char *c = text; *c; c++)
+        width += glutStrokeWidth(GLUT_STROKE_ROMAN, *c);
+
+    glColor4f(r, g, b, a);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPushMatrix();
+    glTranslatef(cx - width * scale * 0.5f, y, 0.0f);
+    glScalef(scale, -scale, 1.0f);
+    for (const char *c = text; *c; c++)
+        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+    glPopMatrix();
+    glDisable(GL_BLEND);
 }
 
 static void drawKeycap(float x, float y, float w, const char *label, float r, float g, float b)
@@ -176,10 +184,10 @@ static void drawStartCover(int w, int h, float t, char *buf)
     drawLineRect(panelX + 10, panelY + 10, panelX + panelW - 10, panelY + panelH - 10, 1.0f, 0.18f, 0.78f, 0.28f, 1.0f);
 
     glColor3f(0.70f, 0.88f, 1.0f);
-    renderStr(panelX + 72.0f, panelY + 58.0f, GLUT_BITMAP_HELVETICA_12, "MAZE HORROR ARCADE");
-    drawTitleText(panelX + 70.0f, panelY + 112.0f, "Crazy Cat 3D", pulse);
+    drawCenteredStrokeText(panelX + panelW * 0.5f + 5.0f, panelY + 128.0f, "Crazy Cat 3D", 0.40f, 0.09f, 0.01f, 0.10f, 0.78f);
+    drawCenteredStrokeText(panelX + panelW * 0.5f - 2.0f, panelY + 121.0f, "Crazy Cat 3D", 0.40f, 0.0f, 0.86f, 1.0f, 0.80f);
+    drawCenteredStrokeText(panelX + panelW * 0.5f, panelY + 124.0f, "Crazy Cat 3D", 0.40f, 1.0f, 0.82f + 0.18f * pulse, 0.12f, 0.98f);
     glColor3f(0.74f, 0.80f, 0.88f);
-    renderStr(panelX + 74.0f, panelY + 154.0f, GLUT_BITMAP_HELVETICA_12, "Kumpulkan koin, manfaatkan power pellet, dan kabur dari 3 hantu.");
 
     if (highScore > 0)
     {
@@ -202,8 +210,10 @@ static void drawStartCover(int w, int h, float t, char *buf)
     renderStr(leftX + 84.0f, cardY + 101.0f, GLUT_BITMAP_HELVETICA_12, "Putar kiri dan kanan");
     drawKeycap(leftX + 22.0f, cardY + 116.0f, 70.0f, "MOUSE", 0.08f, 0.82f, 1.0f);
     renderStr(leftX + 108.0f, cardY + 133.0f, GLUT_BITMAP_HELVETICA_12, "Lihat sekitar");
-    drawKeycap(leftX + 22.0f, cardY + 148.0f, 30.0f, "C", 0.08f, 0.82f, 1.0f);
-    renderStr(leftX + 68.0f, cardY + 165.0f, GLUT_BITMAP_HELVETICA_12, "Ganti kamera");
+    drawKeycap(leftX + 22.0f, cardY + 144.0f, 30.0f, "C", 0.08f, 0.82f, 1.0f);
+    renderStr(leftX + 68.0f, cardY + 161.0f, GLUT_BITMAP_HELVETICA_12, "Ganti kamera");
+    drawKeycap(leftX + 210.0f, cardY + 144.0f, 70.0f, "SPACE", 0.08f, 0.82f, 1.0f);
+    renderStr(leftX + 296.0f, cardY + 161.0f, GLUT_BITMAP_HELVETICA_12, "Dash");
 
     drawMenuCard(rightX, cardY, rightX + cardW, cardY + 176.0f, "PERATURAN", 1.0f, 0.26f, 0.75f);
     drawMenuBullet(rightX + 24.0f, cardY + 60.0f, 1.0f, 0.78f, 0.12f, "Kumpulkan 150 koin untuk menang.");
@@ -377,8 +387,6 @@ void drawPowerBar(int w, int h)
 
 void drawDangerOverlay(int w, int h, float t)
 {
-    // Danger overlay sengaja digambar di layar, bukan sebagai lampu merah di dunia 3D.
-    // Dengan begitu lantai dan atap tidak ikut berubah warna merah saat hantu mendekat.
     if (dangerLevel <= 0.02f || powerActive)
         return;
 

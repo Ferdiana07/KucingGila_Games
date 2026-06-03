@@ -1,4 +1,4 @@
-# DOKUMENTASI KODE GAME KUCING GILA - UPGRADED EDITION
+# DOKUMENTASI KODE GAME CRAZY CAT 3D
 
 ## 📋 RINGKASAN STRUKTUR FILE
 
@@ -252,7 +252,7 @@
 **START state**:
 
 - Background panel semi-transparent black
-- Title "KUCING GILA - UPGRADED EDITION" dengan pulsing effect
+- Title "Crazy Cat 3D" dengan efek neon
 - Instructions tentang kontrol
 - High score display (jika ada)
 
